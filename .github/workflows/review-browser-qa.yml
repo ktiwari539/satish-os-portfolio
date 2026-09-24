@@ -1,0 +1,73 @@
+name: One-time Satish OS browser QA
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/review-browser-qa.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  browser-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+      - name: Desktop and mobile interaction tests
+        run: |
+          node --check motion.js
+          python3 -m http.server 4219 --bind 127.0.0.1 > /tmp/satish-os-server.log 2>&1 &
+          mkdir -p reports
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const failures=[];
+            for(const size of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              const page=await browser.newPage({viewport:{width:size.width,height:size.height},reducedMotion:'no-preference'});
+              page.on('pageerror',error=>failures.push(size.name+': '+error.message));
+              await page.goto('http://127.0.0.1:4219/',{waitUntil:'load'});
+              await page.locator('#introScreen').waitFor({state:'visible',timeout:12000});
+              await page.locator('.intro-enter').click();
+              await page.locator('#introScreen').waitFor({state:'hidden',timeout:4000});
+              await page.locator('#intro').click();
+              await page.locator('#introScreen').waitFor({state:'visible',timeout:4000});
+              await page.locator('.intro-skip').click();
+              await page.locator('#introScreen').waitFor({state:'hidden',timeout:4000});
+              await page.locator('a.shortcut[href="#projects"]').click();
+              await page.locator('#scenePanel.show').waitFor({timeout:4000});
+              await page.waitForTimeout(1200);
+              await page.locator('#trigger').click();
+              await page.locator('#status').getByText('INCIDENT DETECTED').waitFor({timeout:4000});
+              await page.locator('#mitigate').click();
+              await page.locator('#stage').getByText('Verifying').waitFor({timeout:4000});
+              await page.locator('#reset').click();
+              await page.locator('#stage').getByText('Normal').waitFor({timeout:4000});
+              const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);
+              if(overflow)failures.push(size.name+': horizontal overflow');
+              await page.goto('http://127.0.0.1:4219/',{waitUntil:'load'});
+              await page.locator('#introScreen').waitFor({state:'visible',timeout:12000});
+              await page.screenshot({path:'reports/'+size.name+'-intro.png',fullPage:false});
+              await page.locator('.intro-enter').click();
+              await page.locator('#introScreen').waitFor({state:'hidden',timeout:4000});
+              await page.screenshot({path:'reports/'+size.name+'-home.png',fullPage:false});
+              await page.close();
+            }
+            await browser.close();
+            if(failures.length)throw Error(failures.join('\n'));
+            require('fs').writeFileSync('reports/browser-qa.md','# Satish OS browser QA\n\nDesktop (1440×900) and mobile (390×844) passed: opening intro, Enter, replay, Skip, section scene panel, incident/mitigate/reset, and horizontal overflow checks. Screen captures: intro and home for each viewport.\n\nThis verifies the 2.5D animation preview; it does not certify a rigged 3D character.\n');
+            console.log('PASS: desktop and mobile interactive smoke tests');
+          })().catch(err=>{console.error(err);process.exit(1)});
+          NODE
+      - name: Save browser QA result and review screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/browser-qa.md reports/*-intro.png reports/*-home.png
+          git commit -m "Record Satish OS desktop and mobile browser QA"
+          git push
