@@ -1,0 +1,34 @@
+name: Satish OS preview smoke test
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify static assets and JavaScript syntax
+        run: |
+          set -e
+          test -s index.html
+          test -s motion.css
+          test -s motion.js
+          test -s assets/satish-workspace.webp
+          node --check motion.js
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path("index.html").read_text()
+          js=Path("motion.js").read_text()
+          required=['href="motion.css"','src="motion.js"','src="assets/satish-workspace.webp"','id="scene"','id="intro"','id="trigger"']
+          assert all(token in html for token in required)
+          assert 'id="introDialog"' not in html
+          assert all(token in js for token in ('intro-screen','is-blinking','scene-panel','showIntro','closeIntro'))
+          assert Path('assets/satish-workspace.webp').read_bytes()[8:12]==b'WEBP'
+          print("Static smoke checks passed; this does not replace browser QA.")
+          PY
