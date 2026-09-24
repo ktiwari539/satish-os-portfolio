@@ -1,0 +1,35 @@
+name: Vendor approved preview artwork
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/vendor-preview-artwork.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download generated artwork (not original photograph)
+        env:
+          APPROVED_ART_URL: 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/2e99ec83-d6f0-4cea-8e12-9088d0d7abce.webp?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMDQ3NmMwNTdlOTc3NGZkMyIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDM2MzM1MX0.eC2XzWbBfGRQue89QcU8__sYyosdSp6NvKtgCI3OXac'
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          curl --fail --location --retry 2 --silent --show-error "$APPROVED_ART_URL" -o assets/satish-workspace.webp
+          python3 - <<'PY'
+          from pathlib import Path
+          asset=Path("assets/satish-workspace.webp").read_bytes()
+          assert len(asset)>10000 and asset[:4]==b"RIFF" and asset[8:12]==b"WEBP", "Invalid image artifact"
+          print("Generated preview artwork validated:",len(asset),"bytes")
+          PY
+      - name: Commit generated artwork
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/satish-workspace.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Vendor approved generated cinematic artwork"
+            git push
+          fi
