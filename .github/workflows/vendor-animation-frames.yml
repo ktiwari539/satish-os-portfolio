@@ -1,0 +1,42 @@
+name: Vendor animation frames
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/vendor-animation-frames.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download generated animation frames
+        env:
+          IDLE_URL: 'https://dnznrvs05pmza.cloudfront.net/gemini/gemini-3-pro-image/images/250db73d-4379-4ceb-8614-f2e730ef2e1d/1cf06f24-16cd-4755-ae28-dbaf6c14feaa/Create_ONE_alternate_animation_frame_of_the_exact_same_Satis.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOTFjMzMwNGM4MTlkYWQyYSIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDQwMzQwNH0.QRYERtMqe7zqd4jxp1vm0bTyIoOxP-nxm2Y2O19-m_w'
+          BLINK_URL: 'https://dnznrvs05pmza.cloudfront.net/gemini/gemini-3-pro-image/images/f82300b2-f986-4078-94ab-2dbd720a3307/d7c336a5-1913-44a4-bef4-2b81a10d0fb7/Create_ONE_alternate_blink_frame_of_the_exact_same_Satish_OS.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiM2JmY2Q0N2ExZTI4YWMyYiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDQxODgxMH0.ZwcSvh1YFgaJC3eMsNHFbg6PSC3xnEG2Fo5lHmfjWmo'
+          LOOK_URL: 'https://dnznrvs05pmza.cloudfront.net/gemini/gemini-3-pro-image/images/f5420b3c-b07f-4bcf-a2e0-938bcfbb93dc/ea26379e-f261-4bb0-b940-dd431aac5b3d/Create_ONE_alternate_animation_frame_of_the_exact_same_Satis.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMTA3OTFhODBjYTYwNWY1OSIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDQ0NTY5Nn0.pm9GGkSvESeI22oraPpyKxZr3TJqpBT90Z-1Klz66CY'
+          WAVE_URL: 'https://dnznrvs05pmza.cloudfront.net/gemini/gemini-3-pro-image/images/9d872c97-5733-4b04-a651-5f9873321d6d/02cdd434-37c8-4699-8966-904ce5c6df81/Create_ONE_alternate_animation_frame_of_the_exact_same_Satis.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZGY3OTUwMTMxZjA0MjljNyIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDQwODcyM30.1mBYWKMh_2dtQMKyS7cj7ahY8GwPkOdRBvWq30ndnuk'
+        run: |
+          set -euo pipefail
+          mkdir -p assets/character
+          curl -L --fail "$IDLE_URL" -o assets/character/idle.png
+          curl -L --fail "$BLINK_URL" -o assets/character/blink.png
+          curl -L --fail "$LOOK_URL" -o assets/character/look.png
+          curl -L --fail "$WAVE_URL" -o assets/character/wave.png
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('assets/character').glob('*.png'):
+              b=p.read_bytes()
+              assert b[:8]==b'\x89PNG\r\n\x1a\n' and len(b)>10000, f'bad PNG: {p}'
+              print(p, len(b))
+          PY
+      - name: Commit animation frames
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/character/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Add generated character animation frames"
+            git push
+          fi
