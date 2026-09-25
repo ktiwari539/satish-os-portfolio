@@ -35,7 +35,7 @@ jobs:
               await page.locator('#introScreen').waitFor({state:'visible',timeout:10000});
               const video=page.locator('#introVideo');
               await video.waitFor({state:'visible',timeout:10000});
-              await page.waitForFunction(()=>{const v=document.querySelector('#introVideo');return v&&v.readyState>=2&&v.videoWidth>0},{timeout:30000});
+              await page.waitForFunction(()=>{const v=document.querySelector('#introVideo');return v&&v.readyState>=2&&v.videoWidth>0},null,{timeout:25000}).catch(async err=>{const info=await page.locator('#introVideo').evaluate(v=>({currentSrc:v.currentSrc,readyState:v.readyState,networkState:v.networkState,error:v.error?.code||null,videoWidth:v.videoWidth}));throw Error(vp.name+' failed to load video: '+JSON.stringify(info))});
               await page.waitForTimeout(1000);
               const detail=await video.evaluate(v=>({ready:v.readyState,time:v.currentTime,duration:v.duration,width:v.videoWidth}));
               if(detail.time<=0||detail.duration<5.5)throw Error(vp.name+' video did not play: '+JSON.stringify(detail));
