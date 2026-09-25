@@ -1,24 +1,20 @@
-# Satish OS — cinematic interaction review
+# Satish OS — free character animation review
 
-**Development preview; not production.** This repository is separate from the existing portfolio.
+The newest frame-based motion prototype is now the repository's **main `index.html`**. It replaces the earlier illustrated entry page while preserving that previous page in `archive/illustrated-preview-2026-09-25.html`.
 
-## Browser preview without downloading anything
+## Open the site
 
-[Open Satish OS browser preview](https://htmlpreview.github.io/?https://github.com/ktiwari539/satish-os-portfolio/blob/main/index.html)
+- GitHub Pages (once the separate review deployment succeeds): https://ktiwari539.github.io/satish-os-portfolio/
+- GitHub Pages workflow status: https://github.com/ktiwari539/satish-os-portfolio/actions/workflows/satish-preview-pages.yml
+- GitHub source: https://github.com/ktiwari539/satish-os-portfolio/blob/main/index.html
+- Third-party HTML preview fallback: https://htmlpreview.github.io/?https://github.com/ktiwari539/satish-os-portfolio/blob/main/index.html
 
-This is a third-party GitHub HTML previewer, not a Netlify deployment. Do not enter passwords or private data into this previewer.
+**If Pages is not enabled:** in this repository's **Settings → Pages**, select **GitHub Actions** under Build and deployment → Source, then rerun the workflow above. The separate GitHub Pages site is a public, nonproduction preview. Nothing is deployed to the existing Netlify portfolio.
 
 ## What is implemented
 
-- A full-screen cinematic welcome on initial load, replayable via “Watch welcome animation”; it exits automatically or through Skip/Enter.
-- Approved generated character artwork stored in `assets/satish-workspace.webp`. Original personal photographs are excluded.
-- Browser-rendered eyelid-overlay blink, gentle camera/parallax motion and responsive reaction panels when sections are selected.
-- About, Experience, Projects, Skills, Contact, résumé request, and fictional incident response simulation.
+Distinct generated pose images for idle/return to work, blink, look/turn, and wave; browser-controlled image transitions for the opening introduction and navigation, plus an interactive synthetic incident demo. The original user photos/videos are NOT published.
 
-**Limitations:** The character is illustration-based (2.5D), not a fully rigged 3D model. A genuinely natural skeletal hand wave, independent head rotation and precise eye gaze tracking still require animated avatar assets. The résumé PDF is not yet committed.
+**Remaining limitations:** this is a frame-based experimental character animation, not a continuous realistic video or rigged 3D avatar. Visual character identity and background may vary between generated poses. Full final browser/mobile visual QA, genuinely independent eye/head tracking, and public résumé PDF integration still need completion.
 
-## Testing locally
-
-Clone this repository, run `python3 -m http.server 4219` from the repository root and visit `http://localhost:4219`.
-
-The dedicated Netlify preview project has been created but no deployment has been confirmed. Do not modify the existing portfolio or production.
+Free GitHub Pages hosting requires a public repository. Do not change the existing portfolio or make any production deployment without separate approval.
