@@ -6,6 +6,7 @@ import cv2
 import math
 import numpy as np
 import subprocess
+import imageio_ffmpeg
 
 SOURCE=Path("assets/satish-workspace.webp")
 OUTPUT=Path("assets/intro-motion-preview.mp4")
@@ -16,7 +17,7 @@ H,W=image.shape[:2]
 x,y=np.meshgrid(np.arange(W,dtype=np.float32),np.arange(H,dtype=np.float32))
 palm=np.exp(-(((x-90)/84)**6+((y-355)/150)**6))
 head=np.exp(-(((x-264)/125)**4+((y-191)/155)**4))
-cmd=["ffmpeg","-y","-loglevel","error","-f","rawvideo","-pix_fmt","bgr24","-s",f"{W}x{H}","-r","20","-i","-","-vf","pad=ceil(iw/2)*2:ceil(ih/2)*2","-c:v","libx264","-preset","ultrafast","-crf","23","-pix_fmt","yuv420p","-movflags","+faststart",str(OUTPUT)]
+cmd=[imageio_ffmpeg.get_ffmpeg_exe(),"-y","-loglevel","error","-f","rawvideo","-pix_fmt","bgr24","-s",f"{W}x{H}","-r","20","-i","-","-vf","pad=ceil(iw/2)*2:ceil(ih/2)*2","-c:v","libx264","-preset","ultrafast","-crf","23","-pix_fmt","yuv420p","-movflags","+faststart",str(OUTPUT)]
 encoder=subprocess.Popen(cmd,stdin=subprocess.PIPE)
 for n in range(120):
     t=n/20
