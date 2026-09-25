@@ -1,0 +1,82 @@
+name: Free character-motion preview QA
+on:
+  push:
+    branches: [feature/free-character-animation-preview]
+    paths: [.github/workflows/free-motion-qa.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install open-source browser runner
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+      - name: Verify animation frames, intro, interaction and mobile
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('motion-preview.html').read_text()
+          assert 'data:image/webp;base64,' in b and len(b)>100000
+          assert all(x in b for x in ('src="data:image/webp','data-motion="wave"','data-motion="blink"','data-motion="look"','id="intro"'))
+          for name in ('idle','blink','look','wave'):
+              p=Path('assets/character')/(name+'.png')
+              raw=p.read_bytes()
+              assert len(raw)>10000 and raw[:8]==bytes([137,80,78,71,13,10,26,10]),(str(p),len(raw))
+              print('FRAME',name,len(raw))
+          PY
+          python3 -m http.server 4219 --bind 127.0.0.1 >/tmp/satish-mot-qa.log 2>&1 &
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const notes=[];
+            for(const v of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              const page=await browser.newPage({viewport:{width:v.width,height:v.height},reducedMotion:'no-preference'});
+              const errors=[];page.on('pageerror',e=>errors.push(e.message));
+              await page.goto('http://127.0.0.1:4219/motion-preview.html',{waitUntil:'domcontentloaded'});
+              await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+              await page.screenshot({path:'reports/'+v.name+'-intro.png'});
+              await page.locator('#skip').click();
+              await page.locator('#intro').waitFor({state:'hidden',timeout:2000});
+              await page.locator('[data-motion="wave"]').click();
+              await page.waitForTimeout(500);
+              if(await page.locator('#stage').getAttribute('data-state')!=='wave')throw Error('Wave state not activated '+v.name);
+              await page.locator('[data-motion="look"]').click();
+              await page.waitForTimeout(350);
+              if(await page.locator('#stage').getAttribute('data-state')!=='look')throw Error('Look state not activated '+v.name);
+              await page.locator('#trigger').click();
+              if(!((await page.locator('#labState').innerText()).includes('INCIDENT DETECTED')))throw Error('Incident simulation failed');
+              await page.locator('#mitigate').click();
+              await page.locator('#reset').click();
+              await page.locator('#replay').click();
+              await page.locator('#intro').waitFor({state:'visible',timeout:3000});
+              await page.locator('#enter').click();
+              await page.screenshot({path:'reports/'+v.name+'-main.png'});
+              if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+3))throw Error(v.name+' horizontal overflow');
+              if(errors.length)throw Error(v.name+' page errors: '+errors.join(' | '));
+              const loaded=await page.evaluate(async()=>{const result={};for(const name of ['idle','blink','look','wave']){const im=new Image();const url='https://raw.githubusercontent.com/ktiwari539/satish-os-portfolio/main/assets/character/'+name+'.png';result[name]=await new Promise(r=>{im.onload=()=>r(im.naturalWidth>0);im.onerror=()=>r(false);im.src=url;setTimeout(()=>r(false),13000)})}return result});
+              notes.push({viewport:v.name,artwork:loaded,jsErrors:errors.length});
+              if(Object.values(loaded).some(ok=>!ok))throw Error(v.name+' pose images unavailable: '+JSON.stringify(loaded));
+              await page.close();
+            }
+            await browser.close();
+            require('fs').writeFileSync('reports/free-motion-qa.json',JSON.stringify({result:'PASS',tested:notes,scope:'frame-sequence prototype, not rigged 3D'},null,2)+'\n');
+            console.log('PASS: preview intro, state changes, mobile, remote assets, and incident lab');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Publish QA evidence on development branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/*-intro.png reports/*-main.png reports/free-motion-qa.json
+          git commit -m "Record free character-motion preview QA evidence"
+          git push
