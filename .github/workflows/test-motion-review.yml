@@ -1,0 +1,60 @@
+name: Satish OS video preview desktop/mobile browser QA
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/test-motion-review.yml]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/animated-opening-v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install chromium
+      - name: Check intro video playback, skip/replay and page responsiveness
+        run: |
+          set -e
+          python3 -m http.server 4219 --bind 127.0.0.1 >/tmp/server.log 2>&1 &
+          mkdir -p reports
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});
+            for (const vp of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              const page=await browser.newPage({viewport:{width:vp.width,height:vp.height},reducedMotion:'no-preference'});
+              page.on('pageerror',error=>console.error(vp.name,'pageerror',error.message));
+              await page.goto('http://127.0.0.1:4219/',{waitUntil:'domcontentloaded'});
+              await page.locator('#introScreen').waitFor({state:'visible',timeout:10000});
+              const video=page.locator('#introVideo');
+              await video.waitFor({state:'visible',timeout:10000});
+              await page.waitForFunction(()=>{const v=document.querySelector('#introVideo');return v&&v.readyState>=2&&v.videoWidth>0},{timeout:30000});
+              await page.waitForTimeout(1000);
+              const detail=await video.evaluate(v=>({ready:v.readyState,time:v.currentTime,duration:v.duration,width:v.videoWidth}));
+              if(detail.time<=0||detail.duration<5.5)throw Error(vp.name+' video did not play: '+JSON.stringify(detail));
+              await page.screenshot({path:'reports/'+vp.name+'-motion-preview.png'});
+              await page.locator('.intro-skip').click();
+              await page.locator('#introScreen').waitFor({state:'hidden',timeout:5000});
+              await page.locator('#intro').click();
+              await page.locator('#introScreen').waitFor({state:'visible',timeout:4000});
+              await page.locator('.intro-enter').click();
+              await page.locator('#introScreen').waitFor({state:'hidden',timeout:5000});
+              const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);
+              if(overflow)throw Error(vp.name+' horizontal overflow');
+              await page.close();console.log('PASS '+vp.name+' video playback & intro controls '+JSON.stringify(detail));
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: satish-os-motion-preview-screenshots
+          path: reports/
