@@ -18,8 +18,7 @@ jobs:
           python-version: '3.11'
       - name: Install free offline renderer
         run: |
-          python -m pip install numpy opencv-python-headless
-          ffmpeg -version | head -1
+          python -m pip install numpy opencv-python-headless imageio-ffmpeg
       - name: Create the preview MP4 from generated art
         run: python scripts/build_motion_preview.py
       - name: Commit video only to review branch
