@@ -1,0 +1,58 @@
+name: Satish OS free GitHub Pages review preview
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - assets/character/**
+      - .github/workflows/satish-preview-pages.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: satish-os-preview-pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out free character review site
+        uses: actions/checkout@v4
+      - name: Validate preview assets and JavaScript
+        run: |
+          set -euo pipefail
+          test -s index.html
+          for pose in idle blink look wave; do
+            test -s "assets/character/${pose}.png"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text()
+          assert 'data:image/webp;base64,' in html, 'Missing baseline illustration'
+          assert "location.hostname.endsWith('github.io')" in html
+          for name in ('idle','blink','look','wave'):
+              assert name in html
+              data=Path('assets/character/'+name+'.png').read_bytes()
+              assert len(data)>10000 and data[:8]==b'\x89PNG\r\n\x1a\n'
+          print('PASS: preview index and four animation frames present')
+          PY
+      - name: Prepare isolated site folder
+        run: |
+          mkdir -p /tmp/satish-os-preview/assets/character
+          cp index.html /tmp/satish-os-preview/index.html
+          cp assets/character/*.png /tmp/satish-os-preview/assets/character/
+          touch /tmp/satish-os-preview/.nojekyll
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static preview
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: /tmp/satish-os-preview
+      - name: Publish separate GitHub Pages preview
+        uses: actions/deploy-pages@v4
+        id: deployment
