@@ -1,0 +1,35 @@
+name: Build free Satish OS motion preview video
+on:
+  push:
+    branches: [preview/animated-opening-v1]
+    paths: [.github/workflows/build-motion-preview.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/animated-opening-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install free image-processing dependencies
+        run: python -m pip install numpy opencv-python-headless
+      - name: Render motion preview (generated artwork only)
+        run: python scripts/build_motion_preview.py
+      - name: Confirm browser-compatible video
+        run: |
+          ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 assets/intro-motion-preview.mp4
+          test -s assets/intro-motion-preview.mp4
+      - name: Commit preview video to development branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/intro-motion-preview.mp4
+          if ! git diff --cached --quiet; then
+            git commit -m "Add generated six-second illustration motion preview"
+            git push origin HEAD:preview/animated-opening-v1
+          fi
