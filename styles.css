@@ -137,8 +137,13 @@
 .character-3d-ready .visual-orbit{z-index:4}
 
 /* Avaturn full-body presentation inside the approved workspace. */
-.character-3d-ready{background-image:linear-gradient(180deg,rgba(225,238,247,.08),rgba(17,49,74,.08)),url('assets/satish-workspace.webp');background-size:cover;background-position:center}
+.character-3d-ready{background:
+  radial-gradient(circle at 78% 16%,rgba(104,177,236,.34),transparent 26%),
+  radial-gradient(circle at 24% 82%,rgba(245,196,130,.22),transparent 28%),
+  linear-gradient(145deg,#eaf2f7 0%,#dce8ef 48%,#eef3f5 100%);}
 .character-3d-ready .hero-character-3d{filter:drop-shadow(0 24px 28px rgba(17,45,65,.18))}
 @media(max-width:620px){
-  .character-3d-ready{background-position:58% center}
+  .character-3d-ready{background:
+    radial-gradient(circle at 72% 18%,rgba(104,177,236,.3),transparent 28%),
+    linear-gradient(145deg,#eaf2f7,#dfe9ee 58%,#f4eee5)}
 }
