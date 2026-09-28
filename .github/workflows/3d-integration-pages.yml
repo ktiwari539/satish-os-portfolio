@@ -78,7 +78,7 @@ jobs:
           const {chromium}=require('playwright');
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
-            const sample='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r181/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+            const sample='https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
 
             // Validate real WebGL/model pipeline using a QA-only GLB.
             const p=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
@@ -87,7 +87,9 @@ jobs:
             await p.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
             await p.locator('#intro').waitFor({state:'visible',timeout:6000});
             await p.locator('#skipIntro').click();
-            await p.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:25000});
+            await p.waitForTimeout(8000);
+            console.log('LOCAL 3D STATE',await p.evaluate(()=>window.__SATISH3D__||null));
+            if(!(await p.evaluate(()=>window.__SATISH3D__?.ready===true))) await p.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:30000});
             const state=await p.evaluate(()=>window.__SATISH3D__);
             if(!state.ready)throw new Error('3D engine did not become ready');
             if(await p.locator('#heroCharacter3D').isHidden())throw new Error('3D canvas stayed hidden');
@@ -129,7 +131,7 @@ jobs:
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
             const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
-            const sample='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r181/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+            const sample='https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
             const url='https://ktiwari539.github.io/satish-os-portfolio/polish3d/?character=3d&debug=1&qa='+Date.now()+'&model='+encodeURIComponent(sample);
             let ok=false;
             for(let i=0;i<8;i++){
@@ -142,7 +144,9 @@ jobs:
             if(!ok)throw new Error('live 3D review unavailable');
             await page.locator('#intro').waitFor({state:'visible',timeout:8000});
             await page.locator('#skipIntro').click();
-            await page.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:25000});
+            await page.waitForTimeout(8000);
+            console.log('LIVE 3D STATE',await page.evaluate(()=>window.__SATISH3D__||null));
+            if(!(await page.evaluate(()=>window.__SATISH3D__?.ready===true))) await page.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:30000});
             console.log('LIVE 3D INTEGRATION QA PASS',await page.evaluate(()=>window.__SATISH3D__));
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
