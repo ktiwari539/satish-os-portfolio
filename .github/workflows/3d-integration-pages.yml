@@ -1,0 +1,149 @@
+name: Publish Satish OS 3D integration review
+on:
+  push:
+    branches: [feature/polish-3d-character-20260928]
+    paths:
+      - index.html
+      - styles.css
+      - app.js
+      - character-3d.js
+      - assets/character/**
+      - resume/**
+      - .github/workflows/3d-integration-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: satish-os-3d-integration-review
+  cancel-in-progress: true
+
+jobs:
+  test-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 3D integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/polish-3d-character-20260928
+          path: character
+
+      - name: Checkout stable review
+        uses: actions/checkout@v4
+        with:
+          ref: review/final-cinematic-20260928
+          path: stable
+
+      - name: Build improved resume
+        run: |
+          python3 -m pip install --quiet reportlab
+          python3 character/resume/build_resume.py character/assets/resume/Satish_Kumar_Tiwari_Resume.pdf
+          test "$(stat -c%s character/assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 1000
+
+      - name: Assemble stable root and isolated 3D review
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/polish _site/polish3d
+
+          cp stable/index.html stable/styles.css stable/app.js _site/
+          cp stable/index.html _site/review-current.html
+          cp -R stable/assets _site/
+
+          for target in polish polish3d; do
+            cp character/index.html character/styles.css character/app.js character/character-3d.js "_site/$target/"
+            cp -R character/assets "_site/$target/"
+            touch "_site/$target/.nojekyll"
+          done
+          touch _site/.nojekyll
+
+      - name: Install Google Chrome QA runtime
+        run: |
+          npm install --no-save playwright@1.55.0 >/dev/null
+          npx playwright install chrome >/dev/null
+
+      - name: Verify 3D engine and video fallback locally
+        run: |
+          set -euo pipefail
+          node --check character/app.js
+          node --check character/character-3d.js
+          python3 -m http.server 4182 --directory _site >/tmp/satish-3d-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
+            const sample='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r181/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+
+            // Validate real WebGL/model pipeline using a QA-only GLB.
+            const p=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+            const errors=[]; p.on('pageerror',e=>errors.push(e.message));
+            const url='http://127.0.0.1:4182/polish3d/?character=3d&debug=1&model='+encodeURIComponent(sample);
+            await p.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+            await p.locator('#intro').waitFor({state:'visible',timeout:6000});
+            await p.locator('#skipIntro').click();
+            await p.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:25000});
+            const state=await p.evaluate(()=>window.__SATISH3D__);
+            if(!state.ready)throw new Error('3D engine did not become ready');
+            if(await p.locator('#heroCharacter3D').isHidden())throw new Error('3D canvas stayed hidden');
+            await p.mouse.move(1100,340); await p.waitForTimeout(500);
+            const moved=await p.evaluate(()=>Math.abs(window.__SATISH3D__.target.x)>.05||Math.abs(window.__SATISH3D__.target.y)>.05);
+            if(!moved)throw new Error('pointer tracking target did not update');
+            if(errors.length)throw new Error(errors.join(' | '));
+            await p.close();
+
+            // Validate missing final Satish GLB falls back to the approved cinematic video.
+            const f=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+            await f.goto('http://127.0.0.1:4182/polish3d/?character=3d&debug=1',{waitUntil:'domcontentloaded',timeout:30000});
+            await f.locator('#intro').waitFor({state:'visible',timeout:6000});
+            await f.locator('#skipIntro').click();
+            await f.waitForFunction(()=>window.__SATISH3D__?.fallback===true,null,{timeout:15000});
+            const t0=await f.locator('#heroIdle').evaluate(v=>v.currentTime);
+            await f.waitForTimeout(1000);
+            const t1=await f.locator('#heroIdle').evaluate(v=>v.currentTime);
+            if(t1<=t0+.08)throw new Error('cinematic fallback is not playing');
+            await f.close();
+            await browser.close();
+            console.log('3D INTEGRATION QA PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy review
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify live 3D integration
+        run: |
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
+            const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+            const sample='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r181/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+            const url='https://ktiwari539.github.io/satish-os-portfolio/polish3d/?character=3d&debug=1&qa='+Date.now()+'&model='+encodeURIComponent(sample);
+            let ok=false;
+            for(let i=0;i<8;i++){
+              try{
+                const r=await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
+                if(r?.ok()){ok=true;break}
+              }catch(e){}
+              await page.waitForTimeout(2500);
+            }
+            if(!ok)throw new Error('live 3D review unavailable');
+            await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+            await page.locator('#skipIntro').click();
+            await page.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:25000});
+            console.log('LIVE 3D INTEGRATION QA PASS',await page.evaluate(()=>window.__SATISH3D__));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
