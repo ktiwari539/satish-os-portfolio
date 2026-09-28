@@ -1,13 +1,13 @@
-name: Publish Satish OS professional hero review
+name: Publish Satish OS professional review
 on:
   push:
-    branches: [feature/polish-3d-character-20260928]
+    branches: [feature/portfolio-professional-final-20260928]
     paths:
       - index.html
       - styles.css
       - app.js
       - resume/**
-      - .github/workflows/3d-integration-pages.yml
+      - .github/workflows/professional-review-pages.yml
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: satish-os-professional-hero-review
+  group: satish-os-professional-review
   cancel-in-progress: true
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout professional polish branch
         uses: actions/checkout@v4
         with:
-          ref: feature/polish-3d-character-20260928
+          ref: feature/portfolio-professional-final-20260928
           path: professional
 
       - name: Checkout stable review
@@ -45,17 +45,15 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/polish _site/polish3d
+          mkdir -p _site/polish
 
           cp stable/index.html stable/styles.css stable/app.js _site/
           cp stable/index.html _site/review-current.html
           cp -R stable/assets _site/
 
-          for target in polish polish3d; do
-            cp professional/index.html professional/styles.css professional/app.js "_site/$target/"
-            cp -R professional/assets "_site/$target/"
-            touch "_site/$target/.nojekyll"
-          done
+          cp professional/index.html professional/styles.css professional/app.js _site/polish/
+          cp -R professional/assets _site/polish/
+          touch _site/polish/.nojekyll
           touch _site/.nojekyll
 
       - name: Install Google Chrome QA runtime
@@ -75,7 +73,7 @@ jobs:
           const {chromium}=require('playwright');
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
-            for(const path of ['/polish/','/polish3d/']){
+            for(const path of ['/polish/']){
               const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
               const errors=[]; page.on('pageerror',e=>errors.push(e.message));
               await page.goto('http://127.0.0.1:4182'+path+'?qa='+Date.now(),{waitUntil:'domcontentloaded',timeout:30000});
@@ -117,7 +115,7 @@ jobs:
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
             const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
-            const url='https://ktiwari539.github.io/satish-os-portfolio/polish3d/?professional=1&qa='+Date.now();
+            const url='https://ktiwari539.github.io/satish-os-portfolio/polish/?professional=1&qa='+Date.now();
             let ok=false;
             for(let i=0;i<8;i++){
               try{
