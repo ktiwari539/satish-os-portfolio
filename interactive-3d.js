@@ -114,7 +114,7 @@ for(const [x,z,s] of [[-2.3,-.4,.24],[2.2,-.2,.22],[2.6,1.3,.18]]){
  for(let i=0;i<5;i++){const leaf=mesh(new THREE.SphereGeometry(s*.75,16,10),new THREE.MeshStandardMaterial({color:0x47745b,roughness:.9}),scene);leaf.scale.set(.32,1,.24);leaf.rotation.z=(i-2)*.34;leaf.position.set(x+(i-2)*s*.17,-.82+Math.abs(i-2)*.03,z)}
 }
 
-let pointer={x:0,y:0},target={x:0,y:0},smooth={x:0,y:0};
+let pointer={x:0,y:0},target={x:0,y:0},smooth={x:0,y:0},eyeSmooth={x:0,y:0};
 let tracking=true,waveStart=0,blinking=false,nextBlink=performance.now()+1800+Math.random()*1800;
 const prefersReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function resize(){
@@ -162,15 +162,17 @@ function animate(t){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),.05);
  const ease=1-Math.pow(.001,dt);
- smooth.x=THREE.MathUtils.lerp(smooth.x,target.x,ease*.70);
- smooth.y=THREE.MathUtils.lerp(smooth.y,target.y,ease*.70);
+ smooth.x=THREE.MathUtils.lerp(smooth.x,target.x,ease*.48);
+ smooth.y=THREE.MathUtils.lerp(smooth.y,target.y,ease*.48);
+ eyeSmooth.x=THREE.MathUtils.lerp(eyeSmooth.x,target.x,ease*.96);
+ eyeSmooth.y=THREE.MathUtils.lerp(eyeSmooth.y,target.y,ease*.96);
  const headYaw=smooth.x*.22,headPitch=smooth.y*.12;
  neck.rotation.y=THREE.MathUtils.lerp(neck.rotation.y,headYaw*.42,.12);
  neck.rotation.x=THREE.MathUtils.lerp(neck.rotation.x,-headPitch*.26,.12);
  head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,headYaw,.18);
  head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-headPitch,.18);
  torso.rotation.y=THREE.MathUtils.lerp(torso.rotation.y,headYaw*.12,.03);
- const eyeX=smooth.x*.085,eyeY=smooth.y*.055;
+ const eyeX=eyeSmooth.x*.085,eyeY=eyeSmooth.y*.055;
  eyeGroups.forEach(e=>{e.iris.position.x=eyeX;e.pupil.position.x=eyeX;e.shine.position.x=eyeX-.012;e.iris.position.y=eyeY;e.pupil.position.y=eyeY;e.shine.position.y=eyeY+.014});
  if(!prefersReduced){const breathe=Math.sin(t*.0018)*.018;torso.position.y=-.35+breathe;avatar.rotation.z=Math.sin(t*.00055)*.006}
  updateBlink(t);updateWave(t);
