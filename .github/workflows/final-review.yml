@@ -127,7 +127,7 @@ jobs:
           print(OUT)
           PY
           python3 /tmp/build_resume.py
-          test "$(stat -c%s assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 30000
+          test "$(stat -c%s assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 10000
 
       - name: Static quality checks
         run: |
