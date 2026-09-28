@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Satish OS · Interactive 3D Character Lab</title>
+<style>
+:root{--ink:#142638;--blue:#246fe5;--muted:#62798a}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font-family:Inter,Manrope,system-ui,sans-serif;background:#eef4f8;color:var(--ink)}
+body{background:linear-gradient(120deg,rgba(247,250,248,.96),rgba(236,244,250,.84)),url('assets/video/satish-poster.webp') center/cover no-repeat}
+.lab{position:relative;height:100%;display:grid;grid-template-columns:minmax(300px,.78fr) minmax(480px,1.22fr);gap:26px;padding:34px clamp(18px,4vw,60px)}
+.copy{align-self:center;max-width:570px;z-index:4}.kicker{font-size:10px;font-weight:900;letter-spacing:.18em;color:#2c78a5}.copy h1{font-size:clamp(42px,5.3vw,82px);line-height:.98;letter-spacing:-.065em;margin:18px 0}.copy h1 i{font-style:normal;color:var(--blue)}.copy p{max-width:520px;color:var(--muted);font-size:15px;line-height:1.85}.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.badges span{padding:9px 12px;border-radius:30px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.95);box-shadow:0 8px 24px rgba(35,71,96,.08);font-size:10px;font-weight:800}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}.controls button{border:0;border-radius:30px;padding:12px 16px;background:#fff;color:#234a67;font-weight:800;box-shadow:0 10px 28px rgba(28,68,96,.12)}.controls button.primary{background:var(--blue);color:#fff}.controls button:hover{transform:translateY(-2px)}
+.stage{position:relative;min-height:580px;border-radius:30px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(236,245,249,.58));border:1px solid rgba(255,255,255,.85);box-shadow:0 30px 90px rgba(24,61,88,.18);backdrop-filter:blur(14px)}
+#avatarCanvas{width:100%;height:100%;display:block;touch-action:none}.stage-chip{position:absolute;top:18px;left:18px;z-index:3;padding:9px 12px;border-radius:30px;background:rgba(255,255,255,.87);font-size:8px;font-weight:900;letter-spacing:.13em;color:#355f79}.stage-chip:before{content:"";display:inline-block;width:7px;height:7px;background:#20b881;border-radius:50%;margin-right:7px;box-shadow:0 0 0 5px rgba(32,184,129,.1)}.tracking{position:absolute;right:18px;top:18px;z-index:3;padding:10px 12px;border-radius:14px;background:rgba(14,36,54,.78);color:white;font-size:9px;line-height:1.6;backdrop-filter:blur(10px)}.tracking b{color:#73d2ff}.hint{position:absolute;left:18px;right:18px;bottom:17px;z-index:3;display:flex;justify-content:space-between;gap:12px;color:#fff;font-size:9px;font-weight:800;text-shadow:0 2px 10px rgba(0,0,0,.4)}.hint span{padding:8px 10px;border-radius:20px;background:rgba(12,34,51,.44);backdrop-filter:blur(8px)}
+.corner{position:absolute;right:-80px;bottom:-120px;width:330px;height:330px;border-radius:50%;border:1px solid rgba(36,111,229,.16);box-shadow:0 0 0 50px rgba(36,111,229,.04),0 0 0 100px rgba(36,111,229,.025);pointer-events:none}
+.note{position:absolute;left:22px;bottom:18px;font-size:8px;letter-spacing:.12em;color:#718794;font-weight:800}
+@media(max-width:900px){body{overflow:auto}.lab{height:auto;min-height:100%;grid-template-columns:1fr;padding-top:70px}.copy{max-width:none}.stage{min-height:560px}.copy h1{font-size:clamp(40px,10vw,64px)}}@media(max-width:600px){.lab{padding:38px 14px 24px}.stage{min-height:500px;border-radius:20px}.tracking{display:none}.copy p{font-size:13px}.hint{font-size:8px}.badges span{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.controls button{transition:none}}
+</style>
+</head>
+<body>
+<main class="lab">
+<section class="copy">
+  <div class="kicker">OPTION B · THREE.JS MOTION RIG</div>
+  <h1>A character that <i>notices you.</i></h1>
+  <p>This isolated lab tests the advanced interaction before it touches the approved portfolio. Move your cursor around the character: the eyes lead, the head follows, the neck stays constrained, and the body keeps a subtle breathing idle.</p>
+  <div class="badges"><span>Independent eyes</span><span>Head + neck rig</span><span>Natural blink</span><span>Breathing idle</span><span>Cursor smoothing</span><span>Mobile fallback</span></div>
+  <div class="controls"><button class="primary" id="focusBtn">Look at cursor</button><button id="waveBtn">Wave</button><button id="resetBtn">Reset pose</button></div>
+</section>
+<section class="stage" id="stage">
+  <div class="stage-chip">SATISH · MOTION PROTOTYPE</div>
+  <div class="tracking">HEAD <b id="headReadout">0°, 0°</b><br>EYES <b id="eyeReadout">0.00, 0.00</b></div>
+  <canvas id="avatarCanvas" aria-label="Interactive 3D character motion prototype"></canvas>
+  <div class="hint"><span>MOVE CURSOR → eyes react first</span><span>CLICK CHARACTER → wave</span></div>
+</section>
+<div class="corner" aria-hidden="true"></div>
+<div class="note">Experimental branch · current Satish OS remains unchanged</div>
+</main>
+<script type="module" src="interactive-3d.js"></script>
+</body>
+</html>
