@@ -44,16 +44,19 @@ jobs:
               const right=await page.evaluate(()=>({...window.__SATISH3D__}));
               if(!(right.headYaw>0.015) || !(right.eyeX>0.01)) throw new Error(v.name+' rightward tracking failed '+JSON.stringify(right));
               await page.mouse.move(box.x+box.width*.18,box.y+box.height*.68);
-              await page.waitForTimeout(650);
+              await page.waitForTimeout(260);
+              const leftEyes=await page.evaluate(()=>({...window.__SATISH3D__}));
+              if(!(leftEyes.eyeX<-.005)) throw new Error(v.name+' eyes did not lead leftward '+JSON.stringify(leftEyes));
+              await page.waitForTimeout(1050);
               const left=await page.evaluate(()=>({...window.__SATISH3D__}));
-              if(!(left.headYaw<-.015) || !(left.eyeX<-.01)) throw new Error(v.name+' leftward tracking failed '+JSON.stringify(left));
+              if(!(left.headYaw<-.015) || !(left.eyeX<-.007)) throw new Error(v.name+' head did not follow leftward '+JSON.stringify(left));
               await page.locator('#waveBtn').click();
               await page.waitForTimeout(450);
               const wave=await page.evaluate(()=>({...window.__SATISH3D__}));
               if(!wave.waving) throw new Error(v.name+' wave did not start');
               await page.screenshot({path:'reports/interactive-3d/'+v.name+'.png',fullPage:true});
               if(errors.length) throw new Error(v.name+' console errors: '+errors.join(' | '));
-              results.push({viewport:v.name,status:'PASS',rightYaw:right.headYaw,leftYaw:left.headYaw,rightEye:right.eyeX,leftEye:left.eyeX,wave:true});
+              results.push({viewport:v.name,status:'PASS',rightYaw:right.headYaw,leftYaw:left.headYaw,rightEye:right.eyeX,leftEye:left.eyeX,eyesLead:true,wave:true});
               await page.close();
             }
             await browser.close();
