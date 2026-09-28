@@ -92,6 +92,21 @@
     <div class="intro-progress" aria-hidden="true"><span id="exploreProgress"></span></div>
   </div>
   <div id="projectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden><div class="modal-card"><button type="button" id="closeModal" class="modal-close" aria-label="Close project details">×</button><div id="modalContent"></div></div></div>
-<script src="app.js?v=20260928-0630" defer></script>
+<script>
+(() => {
+  const logo = document.getElementById('satishLogo');
+  if (!logo) return;
+  logo.addEventListener('click', event => {
+    event.preventDefault();
+    const target = new URL(window.location.href);
+    target.search = '';
+    target.searchParams.set('entry', 'walkin');
+    target.searchParams.set('restart', String(Date.now()));
+    target.hash = 'home';
+    window.location.replace(target.toString());
+  });
+})();
+</script>
+<script src="app.js?v=20260928-1155" defer></script>
 </body>
 </html>
