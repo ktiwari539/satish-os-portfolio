@@ -1,0 +1,36 @@
+name: Import final Satish GLB
+on:
+  push:
+    branches: [feature/polish-3d-character-20260928]
+    paths:
+      - .github/workflows/import-satish-avatar.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import-avatar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/polish-3d-character-20260928
+          fetch-depth: 0
+      - name: Download exact approved avatar
+        env:
+          AVATAR_URL: 'https://sdmntprindiasocentral.oaiusercontent.com/files/00000000-9634-8211-ab59-0858983b6657/raw?se=2026-09-28T08%3A45%3A06Z&sp=r&sv=2026-02-06&sr=b&scid=5ee0947c-03e0-5b08-8b7b-97261a775ccb&skoid=45d5558d-260a-4eed-aec4-6bc512bdfda4&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-28T02%3A24%3A32Z&ske=2026-09-29T02%3A24%3A32Z&sks=b&skv=2026-02-06&sig=qqux3W5Mt5Ei034oopWZelTPNPhq4RdIJyEr7bUiD18%3D'
+        run: |
+          set -euo pipefail
+          mkdir -p assets/character
+          curl -fL --retry 3 --retry-delay 1 "$AVATAR_URL" -o assets/character/satish-avatar.glb
+          test "$(stat -c%s assets/character/satish-avatar.glb)" -eq 3595092
+          test "$(head -c 4 assets/character/satish-avatar.glb)" = "glTF"
+          echo "f2641a37586b55570f22768a299de55c81e9c09f76978f6a6e191ac3fd7a28d0  assets/character/satish-avatar.glb" | sha256sum -c -
+      - name: Commit avatar to integration branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/character/satish-avatar.glb
+          git commit -m "Add approved Satish rigged avatar"
+          git push origin HEAD:feature/polish-3d-character-20260928
