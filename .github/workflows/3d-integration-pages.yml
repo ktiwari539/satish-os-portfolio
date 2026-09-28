@@ -70,6 +70,7 @@ jobs:
           set -euo pipefail
           node --check character/app.js
           node --check character/character-3d.js
+          mkdir -p character/reports
           python3 -m http.server 4182 --directory _site >/tmp/satish-3d-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
@@ -78,12 +79,10 @@ jobs:
           const {chromium}=require('playwright');
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
-            const sample='https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
-
-            // Validate real WebGL/model pipeline using a QA-only GLB.
+            // Validate the exact committed Satish GLB.
             const p=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
             const errors=[]; p.on('pageerror',e=>errors.push(e.message));
-            const url='http://127.0.0.1:4182/polish3d/?character=3d&debug=1&model='+encodeURIComponent(sample);
+            const url='http://127.0.0.1:4182/polish3d/?character=3d&debug=1';
             await p.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
             await p.locator('#intro').waitFor({state:'visible',timeout:6000});
             await p.locator('#skipIntro').click();
@@ -93,15 +92,20 @@ jobs:
             const state=await p.evaluate(()=>window.__SATISH3D__);
             if(!state.ready)throw new Error('3D engine did not become ready');
             if(await p.locator('#heroCharacter3D').isHidden())throw new Error('3D canvas stayed hidden');
+            if(!state.bones?.head||!state.bones?.neck||!state.bones?.upperArmR||!state.bones?.foreArmR)throw new Error('expected Avaturn body rig was not detected: '+JSON.stringify(state.bones));
+            if(state.bones?.eyeL||state.bones?.eyeR)throw new Error('unexpected separate eye bones detected; update capability assumptions');
+            if(state.blinkMorphs!==0)throw new Error('unexpected blink morphs detected; update capability assumptions');
+            if(!state.capabilities?.idle)throw new Error('Avaturn idle animation was not activated');
+            await p.screenshot({path:'character/reports/satish-avatar-desktop.png',fullPage:false});
             await p.mouse.move(1100,340); await p.waitForTimeout(500);
             const moved=await p.evaluate(()=>Math.abs(window.__SATISH3D__.target.x)>.05||Math.abs(window.__SATISH3D__.target.y)>.05);
             if(!moved)throw new Error('pointer tracking target did not update');
             if(errors.length)throw new Error(errors.join(' | '));
             await p.close();
 
-            // Validate missing final Satish GLB falls back to the approved cinematic video.
+            // Validate a deliberately missing model falls back to the approved cinematic video.
             const f=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
-            await f.goto('http://127.0.0.1:4182/polish3d/?character=3d&debug=1',{waitUntil:'domcontentloaded',timeout:30000});
+            await f.goto('http://127.0.0.1:4182/polish3d/?character=3d&debug=1&model=assets/character/does-not-exist.glb',{waitUntil:'domcontentloaded',timeout:30000});
             await f.locator('#intro').waitFor({state:'visible',timeout:6000});
             await f.locator('#skipIntro').click();
             await f.waitForFunction(()=>window.__SATISH3D__?.fallback===true,null,{timeout:15000});
@@ -131,8 +135,7 @@ jobs:
           (async()=>{
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
             const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
-            const sample='https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
-            const url='https://ktiwari539.github.io/satish-os-portfolio/polish3d/?character=3d&debug=1&qa='+Date.now()+'&model='+encodeURIComponent(sample);
+            const url='https://ktiwari539.github.io/satish-os-portfolio/polish3d/?character=3d&debug=1&qa='+Date.now();
             let ok=false;
             for(let i=0;i<8;i++){
               try{
@@ -147,7 +150,18 @@ jobs:
             await page.waitForTimeout(8000);
             console.log('LIVE 3D STATE',await page.evaluate(()=>window.__SATISH3D__||null));
             if(!(await page.evaluate(()=>window.__SATISH3D__?.ready===true))) await page.waitForFunction(()=>window.__SATISH3D__?.ready===true,null,{timeout:30000});
-            console.log('LIVE 3D INTEGRATION QA PASS',await page.evaluate(()=>window.__SATISH3D__));
+            const liveState=await page.evaluate(()=>window.__SATISH3D__);
+            if(!liveState.bones?.head||!liveState.bones?.neck||!liveState.bones?.upperArmR||!liveState.bones?.foreArmR)throw new Error('live Avaturn rig mismatch: '+JSON.stringify(liveState.bones));
+            await page.screenshot({path:'character/reports/satish-avatar-live.png',fullPage:false});
+            console.log('LIVE 3D INTEGRATION QA PASS',liveState);
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
+
+      - name: Upload Satish avatar QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: satish-avatar-3d-qa
+          path: character/reports/satish-avatar-*.png
+          if-no-files-found: ignore
