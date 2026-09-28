@@ -42,6 +42,11 @@ jobs:
             page.on('console',m=>{if(m.type()==='error') errors.push('console: '+m.text())});
             const url='https://ktiwari539.github.io/satish-os-portfolio/review-current.html?qa='+Date.now();
             await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+            for(const path of ['assets/video/satish-welcome.mp4','assets/video/satish-refresh-entry.mp4','assets/video/satish-explore.mp4']){
+              const mediaUrl='https://ktiwari539.github.io/satish-os-portfolio/'+path;
+              const rr=await page.request.get(mediaUrl,{headers:{Range:'bytes=0-1023'}});
+              console.log('MEDIA '+path+' status='+rr.status()+' type='+(rr.headers()['content-type']||'')+' length='+(rr.headers()['content-length']||''));
+            }
             await page.locator('#intro').waitFor({state:'visible',timeout:8000});
 
             async function assertPlaying(selector,expected,label){
@@ -54,7 +59,8 @@ jobs:
               await page.waitForTimeout(1400);
               const state=await video.evaluate(v=>({currentTime:v.currentTime,paused:v.paused,readyState:v.readyState,src:v.currentSrc}));
               if(state.currentTime<=before+.15 || state.paused){
-                throw new Error(label+' is not playing: '+JSON.stringify({before,...state}));
+                const diag=await video.evaluate(v=>({error:v.error&&{code:v.error.code,message:v.error.message},networkState:v.networkState,readyState:v.readyState,currentSrc:v.currentSrc}));
+                throw new Error(label+' is not playing: '+JSON.stringify({before,...state,diag}));
               }
               console.log(label+' PASS '+JSON.stringify(state));
             }
