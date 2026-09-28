@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "scope": "static/media validation",
+  "files": {
+    "index.html": 15799,
+    "styles.css": 19710,
+    "app.js": 12644,
+    "assets/video/satish-welcome.mp4": 2987740,
+    "assets/video/satish-explore.mp4": 3126443,
+    "assets/video/satish-refresh-entry.mp4": 3636500,
+    "assets/video/satish-idle.mp4": 62969,
+    "assets/video/satish-poster.webp": 46630,
+    "assets/video/satish-explore-poster.webp": 46062,
+    "assets/resume/Satish_Kumar_Tiwari_Resume.pdf": 6423
+  }
+}
