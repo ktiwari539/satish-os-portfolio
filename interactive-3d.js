@@ -165,12 +165,12 @@ function animate(t){
  smooth.x=THREE.MathUtils.lerp(smooth.x,target.x,ease*.42);
  smooth.y=THREE.MathUtils.lerp(smooth.y,target.y,ease*.42);
  const headYaw=smooth.x*.22,headPitch=smooth.y*.12;
- neck.rotation.y=THREE.MathUtils.lerp(neck.rotation.y,headYaw*.42,.08);
- neck.rotation.x=THREE.MathUtils.lerp(neck.rotation.x,-headPitch*.26,.08);
- head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,headYaw,.12);
- head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-headPitch,.12);
+ neck.rotation.y=THREE.MathUtils.lerp(neck.rotation.y,headYaw*.42,.12);
+ neck.rotation.x=THREE.MathUtils.lerp(neck.rotation.x,-headPitch*.26,.12);
+ head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,headYaw,.18);
+ head.rotation.x=THREE.MathUtils.lerp(head.rotation.x,-headPitch,.18);
  torso.rotation.y=THREE.MathUtils.lerp(torso.rotation.y,headYaw*.12,.03);
- const eyeX=smooth.x*.075,eyeY=smooth.y*.05;
+ const eyeX=smooth.x*.085,eyeY=smooth.y*.055;
  eyeGroups.forEach(e=>{e.iris.position.x=eyeX;e.pupil.position.x=eyeX;e.shine.position.x=eyeX-.012;e.iris.position.y=eyeY;e.pupil.position.y=eyeY;e.shine.position.y=eyeY+.014});
  if(!prefersReduced){const breathe=Math.sin(t*.0018)*.018;torso.position.y=-.35+breathe;avatar.rotation.z=Math.sin(t*.00055)*.006}
  updateBlink(t);updateWave(t);
