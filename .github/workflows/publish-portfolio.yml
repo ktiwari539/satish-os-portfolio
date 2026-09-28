@@ -1,0 +1,158 @@
+name: Publish Satish OS portfolio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - styles.css
+      - app.js
+      - resume/**
+      - assets/**
+      - .github/workflows/publish-portfolio.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: satish-os-production
+  cancel-in-progress: true
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          path: site
+
+      - name: Build résumé
+        run: |
+          python3 -m pip install --quiet reportlab
+          python3 site/resume/build_resume.py site/assets/resume/Satish_Kumar_Tiwari_Resume.pdf
+          test "$(stat -c%s site/assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 1000
+
+      - name: Assemble production site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/polish
+          cp site/index.html site/styles.css site/app.js _site/
+          cp -R site/assets _site/
+          cp site/index.html site/styles.css site/app.js _site/polish/
+          cp -R site/assets _site/polish/
+          touch _site/.nojekyll _site/polish/.nojekyll
+
+      - name: Install browser QA runtime
+        run: |
+          npm install --no-save playwright@1.55.0 >/dev/null
+          npx playwright install chrome >/dev/null
+
+      - name: Run desktop/mobile QA and build social preview
+        run: |
+          set -euo pipefail
+          node --check site/app.js
+          python3 -m http.server 4182 --directory _site >/tmp/satish-production-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
+            const expected={dark:'satish-idle.mp4',light:'satish-workday-white.mp4'};
+            for(const viewport of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              for(const scene of ['dark','light']){
+                const page=await browser.newPage({viewport:{width:viewport.width,height:viewport.height},reducedMotion:'no-preference'});
+                const errors=[];
+                page.on('pageerror',e=>errors.push(e.message));
+                await page.goto('http://127.0.0.1:4182/?hero='+scene+'&qa='+Date.now(),{waitUntil:'domcontentloaded',timeout:30000});
+                await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+                await page.locator('#skipIntro').click();
+                await page.locator('.hero-visual').waitFor({state:'visible',timeout:4000});
+                const video=page.locator('#heroIdle');
+                const before=await video.evaluate(v=>v.currentTime);
+                await page.waitForTimeout(1200);
+                const state=await video.evaluate(v=>({
+                  time:v.currentTime,paused:v.paused,src:v.currentSrc,loop:v.loop,
+                  scene:v.dataset.scene,w:v.videoWidth,h:v.videoHeight,
+                  scrollWidth:document.documentElement.scrollWidth,innerWidth:window.innerWidth
+                }));
+                if(state.paused||state.time<=before+.08)throw new Error(viewport.name+' '+scene+' hero not playing: '+JSON.stringify(state));
+                if(!state.src.includes(expected[scene]))throw new Error(viewport.name+' '+scene+' source mismatch: '+state.src);
+                if(state.loop)throw new Error(viewport.name+' '+scene+' hero must not hard-loop');
+                if(state.scene!==scene)throw new Error(viewport.name+' scene mismatch: '+JSON.stringify(state));
+                if(state.scrollWidth>state.innerWidth+1)throw new Error(viewport.name+' horizontal overflow: '+JSON.stringify(state));
+                if(scene==='light'&&(state.w!==854||state.h!==480))throw new Error('cleaned workday dimensions unexpected: '+state.w+'x'+state.h);
+                if(errors.length)throw new Error(viewport.name+' '+scene+' '+errors.join(' | '));
+                await page.close();
+              }
+            }
+
+            const social=await browser.newPage({viewport:{width:1200,height:630},deviceScaleFactor:1,reducedMotion:'no-preference'});
+            await social.goto('http://127.0.0.1:4182/?hero=dark&social=1',{waitUntil:'domcontentloaded',timeout:30000});
+            await social.locator('#intro').waitFor({state:'visible',timeout:8000});
+            await social.locator('#skipIntro').click();
+            await social.locator('.hero-visual').waitFor({state:'visible',timeout:4000});
+            await social.waitForTimeout(900);
+            await social.screenshot({path:'_site/assets/social-preview.png',fullPage:false});
+            await social.close();
+            await browser.close();
+            console.log('PRODUCTION QA PASS + SOCIAL PREVIEW GENERATED');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+          test "$(stat -c%s _site/assets/social-preview.png)" -gt 10000
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy portfolio
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify live site and social card
+        run: |
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
+            for(const [scene,expected] of [['dark','satish-idle.mp4'],['light','satish-workday-white.mp4']]){
+              const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+              const url='https://ktiwari539.github.io/satish-os-portfolio/?hero='+scene+'&qa='+Date.now();
+              let response=null;
+              for(let i=0;i<8;i++){
+                try{
+                  response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
+                  if(response?.ok())break;
+                }catch(_){}
+                await page.waitForTimeout(2500);
+              }
+              if(!response?.ok())throw new Error('live site unavailable for '+scene);
+              await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+              await page.locator('#skipIntro').click();
+              const video=page.locator('#heroIdle');
+              const before=await video.evaluate(v=>v.currentTime);
+              await page.waitForTimeout(1200);
+              const state=await video.evaluate(v=>({time:v.currentTime,paused:v.paused,src:v.currentSrc,loop:v.loop}));
+              if(state.paused||state.time<=before+.08)throw new Error('live '+scene+' hero not playing');
+              if(!state.src.includes(expected))throw new Error('live '+scene+' source mismatch');
+              if(state.loop)throw new Error('live '+scene+' hero must not hard-loop');
+              await page.close();
+            }
+            const card=await browser.newPage();
+            const r=await card.goto('https://ktiwari539.github.io/satish-os-portfolio/assets/social-preview.png?qa='+Date.now(),{waitUntil:'load',timeout:25000});
+            if(!r?.ok())throw new Error('live social preview unavailable');
+            await card.close();
+            await browser.close();
+            console.log('LIVE PRODUCTION QA PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
