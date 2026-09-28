@@ -4,7 +4,9 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const intro=$('intro'),introVideo=$('introVideo'),introHelp=$('videoHelp'),heroIdle=$('heroIdle');
 const explore=$('exploreSequence'),exploreVideo=$('exploreVideo'),exploreHelp=$('exploreHelp');
 const navEntry=performance.getEntriesByType?.('navigation')?.[0];
-const isReload=navEntry?.type==='reload';
+const legacyReload=performance.navigation?.type===1;
+const forcedWalkIn=new URLSearchParams(location.search).get('entry')==='walkin';
+const isReload=navEntry?.type==='reload'||legacyReload;
 const welcomeSrc='assets/video/satish-welcome.mp4';
 const refreshSrc='assets/video/satish-refresh-entry.mp4';
 let introOpen=false,exploreOpen=false,progressId=0,exploreProgressId=0,focusReturn=null;
@@ -21,8 +23,10 @@ function toggleSound(video,button,help){
 }
 function configureEntry(forceWalkIn=false){
   const source=$('introSource'); if(!source)return;
-  const refresh=(forceWalkIn||isReload)&&!reduced;
-  source.src=refresh?refreshSrc:welcomeSrc;
+  const refresh=(forceWalkIn||forcedWalkIn||isReload)&&!reduced;
+  const selectedSrc=refresh?refreshSrc:welcomeSrc;
+  source.src=selectedSrc;
+  introVideo.src=selectedSrc;
   $('introModeLabel').textContent=refresh?'WELCOME BACK · REFRESH ENTRANCE':'WELCOME SEQUENCE';
   $('introEyebrow').textContent=refresh?'WELCOME BACK TO SATISH OS':"HELLO, I'M SATISH TIWARI";
   $('introTitle').innerHTML=refresh?'Walk in.<br>Settle in.<br><i>Build forward.</i>':'Technology.<br>People.<br><i>Possibility.</i>';
@@ -83,16 +87,6 @@ introVideo?.addEventListener('ended',()=>closeIntro());
 exploreVideo?.addEventListener('ended',()=>closeExplore(true));
 introVideo?.addEventListener('error',()=>{introHelp.textContent='The cinematic video could not load. You can still enter the portfolio.'});
 exploreVideo?.addEventListener('error',()=>{exploreHelp.textContent='The invitation video could not load. Continue to the projects.'});
-
-document.querySelector('.wordmark')?.addEventListener('click',event=>{
-  event.preventDefault();
-  if(exploreOpen)closeExplore(false);
-  if(introOpen)closeIntro();
-  scrollTo({top:0,behavior:'auto'});
-  if(history.replaceState)history.replaceState(null,'',location.pathname+location.search+'#home');
-  configureEntry(true);
-  openIntro(false);
-});
 
 const projects={
  reliability:{kicker:'01 / PLATFORM RELIABILITY',title:'When a signal becomes a response.',summary:'An illustrative incident-response workflow: detect a signal, acknowledge impact, coordinate mitigation and confirm recovery.',details:[['CHALLENGE','Production issues need timely context, clear ownership and reliable communication—not just another alert.'],['APPROACH','Bring monitoring, escalation, response checkpoints and stakeholder updates into one traceable workflow.'],['INTERACTION','Trigger the synthetic incident, acknowledge it, mitigate it and verify recovery. No real client systems or customer information are connected.']]},
