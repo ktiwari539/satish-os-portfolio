@@ -1,20 +1,32 @@
-# Satish OS — free character animation review
+# Satish OS — professional portfolio
 
-The newest frame-based motion prototype is now the repository's **main `index.html`**. It replaces the earlier illustrated entry page while preserving that previous page in `archive/illustrated-preview-2026-09-25.html`.
+Satish OS is the public professional portfolio for Satish Kumar Tiwari, focused on technical operations, customer success leadership, reliability, automation, applied AI and cross-functional delivery.
 
-## Open the site
+## Public site
 
-- GitHub Pages (once the separate review deployment succeeds): https://ktiwari539.github.io/satish-os-portfolio/
-- GitHub Pages workflow status: https://github.com/ktiwari539/satish-os-portfolio/actions/workflows/satish-preview-pages.yml
-- GitHub source: https://github.com/ktiwari539/satish-os-portfolio/blob/main/index.html
-- Third-party HTML preview fallback: https://htmlpreview.github.io/?https://github.com/ktiwari539/satish-os-portfolio/blob/main/index.html
+- Portfolio: https://ktiwari539.github.io/satish-os-portfolio/
+- Review alias: https://ktiwari539.github.io/satish-os-portfolio/polish/
+- Repository: https://github.com/ktiwari539/satish-os-portfolio
 
-**If Pages is not enabled:** in this repository's **Settings → Pages**, select **GitHub Actions** under Build and deployment → Source, then rerun the workflow above. The separate GitHub Pages site is a public, nonproduction preview. Nothing is deployed to the existing Netlify portfolio.
+GitHub Pages is the current public host. The older Netlify portfolio is separate and is not modified by this project.
 
-## What is implemented
+## Experience
 
-Distinct generated pose images for idle/return to work, blink, look/turn, and wave; browser-controlled image transitions for the opening introduction and navigation, plus an interactive synthetic incident demo. The original user photos/videos are NOT published.
+The site includes:
+- professional welcome and refresh/walk-in cinematics,
+- two separate ambient workday hero scenes selected per browser session,
+- a dedicated Explore My Work cinematic,
+- technical operations, automation and applied-AI positioning,
+- measurable career impact,
+- interactive selected-work case studies and synthetic incident-response lab,
+- interactive toolkit,
+- downloadable ATS-friendly résumé,
+- responsive desktop/mobile behavior and browser QA.
 
-**Remaining limitations:** this is a frame-based experimental character animation, not a continuous realistic video or rigged 3D avatar. Visual character identity and background may vary between generated poses. Full final browser/mobile visual QA, genuinely independent eye/head tracking, and public résumé PDF integration still need completion.
+The two hero scenes are intentionally treated as different workday moments rather than rapidly switching clothing or environments. The alternate white-shirt clip is a cleaned crop of the approved source and excludes the unwanted mug mark from the published asset.
 
-Free GitHub Pages hosting requires a public repository. Do not change the existing portfolio or make any production deployment without separate approval.
+## Safety and accuracy
+
+No real customer systems are connected to the interactive demo. Private client/customer information is excluded. Career claims and job titles should remain grounded in documented experience.
+
+The old production portfolio at https://ktiwari539.netlify.app is not changed by this repository.

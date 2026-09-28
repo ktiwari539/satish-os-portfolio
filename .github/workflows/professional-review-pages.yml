@@ -1,7 +1,7 @@
-name: Publish Satish OS professional review
+name: Publish Satish OS professional portfolio
 on:
   push:
-    branches: [feature/portfolio-professional-final-20260928]
+    branches: [feature/portfolio-professional-final-20260928, main]
     paths:
       - index.html
       - styles.css
@@ -17,17 +17,17 @@ permissions:
   id-token: write
 
 concurrency:
-  group: satish-os-professional-review
+  group: satish-os-professional-portfolio
   cancel-in-progress: true
 
 jobs:
   test-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout professional polish branch
+      - name: Checkout professional portfolio source
         uses: actions/checkout@v4
         with:
-          ref: feature/portfolio-professional-final-20260928
+          ref: ${{ github.ref_name }}
           path: professional
 
       - name: Checkout stable review
@@ -42,20 +42,24 @@ jobs:
           python3 professional/resume/build_resume.py professional/assets/resume/Satish_Kumar_Tiwari_Resume.pdf
           test "$(stat -c%s professional/assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 1000
 
-      - name: Assemble stable root plus professional polish previews
+      - name: Assemble professional root and review alias
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/polish
+          mkdir -p _site/polish _site/archive/stable
 
-          cp stable/index.html stable/styles.css stable/app.js _site/
-          cp stable/index.html _site/review-current.html
-          cp -R stable/assets _site/
+          cp professional/index.html professional/styles.css professional/app.js _site/
+          cp -R professional/assets _site/
 
           cp professional/index.html professional/styles.css professional/app.js _site/polish/
           cp -R professional/assets _site/polish/
-          touch _site/polish/.nojekyll
+
+          cp stable/index.html stable/styles.css stable/app.js _site/archive/stable/
+          cp -R stable/assets _site/archive/stable/
+
           touch _site/.nojekyll
+          touch _site/polish/.nojekyll
+          touch _site/archive/stable/.nojekyll
 
       - name: Install Google Chrome QA runtime
         run: |
@@ -103,12 +107,48 @@ jobs:
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
 
+
+      - name: Verify mobile professional layout locally
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4183 --directory _site >/tmp/satish-mobile-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
+            for(const scene of ['dark','light']){
+              const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'no-preference'});
+              const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+              await page.goto('http://127.0.0.1:4183/?hero='+scene+'&mobileqa='+Date.now(),{waitUntil:'domcontentloaded',timeout:30000});
+              await page.locator('#intro').waitFor({state:'visible',timeout:6000});
+              await page.locator('#skipIntro').click();
+              await page.locator('.hero-visual').waitFor({state:'visible',timeout:3000});
+              const metrics=await page.evaluate(()=>({
+                scrollWidth:document.documentElement.scrollWidth,
+                innerWidth:window.innerWidth,
+                scene:document.getElementById('heroIdle')?.dataset.scene,
+                src:document.getElementById('heroIdle')?.currentSrc
+              }));
+              if(metrics.scrollWidth>metrics.innerWidth+1)throw new Error('mobile horizontal overflow: '+JSON.stringify(metrics));
+              if(metrics.scene!==scene)throw new Error('mobile scene mismatch: '+JSON.stringify(metrics));
+              if(scene==='light'&&!metrics.src.includes('satish-workday-white.mp4'))throw new Error('mobile light hero source mismatch');
+              if(errors.length)throw new Error(errors.join(' | '));
+              await page.close();
+            }
+            await browser.close();
+            console.log('MOBILE PROFESSIONAL QA PASS');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy professional review
+      - name: Deploy professional portfolio
         id: deployment
         uses: actions/deploy-pages@v4
 
@@ -120,7 +160,7 @@ jobs:
             const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
             for(const [scene,expected] of [['dark','satish-idle.mp4'],['light','satish-workday-white.mp4']]){
               const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
-              const url='https://ktiwari539.github.io/satish-os-portfolio/polish/?hero='+scene+'&professional=1&qa='+Date.now();
+              const url='https://ktiwari539.github.io/satish-os-portfolio/?hero='+scene+'&professional=1&qa='+Date.now();
               let ok=false;
               for(let i=0;i<8;i++){
                 try{

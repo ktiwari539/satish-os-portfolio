@@ -232,7 +232,7 @@ document.querySelectorAll('[data-open]').forEach(b=>{
 $('closeModal')?.addEventListener('click',closeProject);modal?.addEventListener('click',e=>{if(e.target===modal)closeProject()});
 
 const toolkitData={
- automation:{label:'ACTIVE TOOLKIT / AUTOMATION',title:'Build once. Remove repeat work.',description:'Connect APIs, scripts and webhooks into reliable workflows with validation, checkpoints and useful alerts.',flow:['INPUT','VALIDATE','AUTOMATE','REPORT']},
+ automation:{label:'ACTIVE TOOLKIT / AUTOMATION + APPLIED AI',title:'Build once. Remove repeat work.',description:'Connect APIs, scripts, webhooks and AI-assisted analysis into reliable workflows with validation, checkpoints and useful alerts.',flow:['INPUT','VALIDATE','AUGMENT','ACT']},
  visibility:{label:'ACTIVE TOOLKIT / DATA & VISIBILITY',title:'Turn operational data into a decision.',description:'Use dashboards and automated reporting to make SLA health, trends and follow-up actions easier for both technical and business stakeholders to understand.',flow:['COLLECT','CHECK','VISUALIZE','DECIDE']},
  operations:{label:'ACTIVE TOOLKIT / OPERATIONS & LEADERSHIP',title:'Make ownership obvious when pressure is high.',description:'Combine incident response, clear escalation, stakeholder communication and process improvement so teams know what happens next.',flow:['DETECT','OWN','COORDINATE','LEARN']}
 };
