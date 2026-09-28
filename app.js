@@ -7,8 +7,9 @@ const navEntry=performance.getEntriesByType?.('navigation')?.[0];
 const legacyReload=performance.navigation?.type===1;
 const forcedWalkIn=new URLSearchParams(location.search).get('entry')==='walkin';
 const isReload=navEntry?.type==='reload'||legacyReload;
-const welcomeSrc='assets/video/satish-welcome.mp4';
-const refreshSrc='assets/video/satish-refresh-entry.mp4';
+const mediaVersion='20260928-1245';
+const welcomeSrc='assets/video/satish-welcome.mp4?v='+mediaVersion;
+const refreshSrc='assets/video/satish-refresh-entry.mp4?v='+mediaVersion;
 let introOpen=false,exploreOpen=false,progressId=0,exploreProgressId=0,focusReturn=null;
 
 function setSound(video,button,on){
