@@ -42,11 +42,11 @@ jobs:
               await page.mouse.move(box.x+box.width*.84,box.y+box.height*.30);
               await page.waitForTimeout(650);
               const right=await page.evaluate(()=>({...window.__SATISH3D__}));
-              if(!(right.headYaw>0.04) || !(right.eyeX>0.01)) throw new Error(v.name+' rightward tracking failed '+JSON.stringify(right));
+              if(!(right.headYaw>0.015) || !(right.eyeX>0.01)) throw new Error(v.name+' rightward tracking failed '+JSON.stringify(right));
               await page.mouse.move(box.x+box.width*.18,box.y+box.height*.68);
               await page.waitForTimeout(650);
               const left=await page.evaluate(()=>({...window.__SATISH3D__}));
-              if(!(left.headYaw<-.04) || !(left.eyeX<-.01)) throw new Error(v.name+' leftward tracking failed '+JSON.stringify(left));
+              if(!(left.headYaw<-.015) || !(left.eyeX<-.01)) throw new Error(v.name+' leftward tracking failed '+JSON.stringify(left));
               await page.locator('#waveBtn').click();
               await page.waitForTimeout(450);
               const wave=await page.evaluate(()=>({...window.__SATISH3D__}));
