@@ -24,16 +24,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install Chromium test runtime
+      - name: Install Google Chrome test runtime
         run: |
           npm install --no-save playwright@1.55.0 >/dev/null
-          npx playwright install chromium >/dev/null
+          npx playwright install chrome >/dev/null
       - name: Verify deployed welcome, walk-in, and explore videos
         run: |
           node <<'NODE'
           const {chromium}=require('playwright');
           (async()=>{
-            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
             const page=await browser.newPage({
               viewport:{width:1440,height:900},
               reducedMotion:'no-preference'
