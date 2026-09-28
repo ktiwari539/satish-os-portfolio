@@ -38,3 +38,8 @@
 @media(max-width:1150px){.hero-capabilities{width:235px}.hero-code-card{width:205px}.hero-quote-card{width:195px}.hero-capabilities button em{display:none}.hero-mini{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){.hero-capabilities{top:62px;left:13px;width:220px}.hero-code-card{top:62px;right:13px;width:190px}.hero-quote-card{right:13px;bottom:58px;width:185px}}
 @media(max-width:620px){.hero-capabilities{top:55px;left:10px;width:178px;padding:8px;gap:5px}.hero-float-title small,.hero-capabilities button em{display:none}.hero-capabilities button{padding:8px 25px 8px 31px}.hero-capabilities button>span{left:7px;top:8px;width:18px;height:18px}.hero-capabilities button b{font-size:8px}.hero-capabilities button i{top:9px;right:7px}.hero-code-card{top:auto;right:10px;bottom:58px;width:155px;padding:9px}.hero-code-card code{font-size:8px;line-height:1.55;margin:7px 0}.code-card-foot{display:none}.hero-quote-card{display:none}.hero-mini{grid-template-columns:repeat(2,1fr)}}
+
+/* Satish OS brand is an intentional walk-in restart control in header and cinematic overlays. */
+.brand-restart{color:inherit;text-decoration:none;cursor:pointer;width:max-content;max-width:100%}
+.brand-restart:hover{color:inherit;text-decoration:none}
+.brand-restart:focus-visible{outline:3px solid rgba(36,111,229,.42);outline-offset:6px;border-radius:8px}
