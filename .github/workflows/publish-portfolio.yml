@@ -7,6 +7,8 @@ on:
       - index.html
       - styles.css
       - app.js
+      - robots.txt
+      - sitemap.xml
       - resume/**
       - assets/**
       - .github/workflows/publish-portfolio.yml
@@ -44,11 +46,19 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site/polish
-          cp site/index.html site/styles.css site/app.js _site/
+          cp site/index.html site/styles.css site/app.js site/robots.txt site/sitemap.xml _site/
           cp -R site/assets _site/
           cp site/index.html site/styles.css site/app.js _site/polish/
           cp -R site/assets _site/polish/
           touch _site/.nojekyll _site/polish/.nojekyll
+
+      - name: Verify search discovery files
+        run: |
+          set -euo pipefail
+          grep -F 'Sitemap: https://ktiwari539.github.io/satish-os-portfolio/sitemap.xml' _site/robots.txt
+          grep -F '<loc>https://ktiwari539.github.io/satish-os-portfolio/</loc>' _site/sitemap.xml
+          grep -F '"@type": "Person"' _site/index.html
+          grep -F '<title>Satish Tiwari | Technical Operations, Automation & Applied AI</title>' _site/index.html
 
       - name: Install browser QA runtime
         run: |
@@ -127,7 +137,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify live site and social card
+      - name: Verify live site, social card and search files
         run: |
           node <<'NODE'
           const {chromium}=require('playwright');
@@ -169,7 +179,18 @@ jobs:
             const r=await card.goto('https://ktiwari539.github.io/satish-os-portfolio/assets/social-preview.png?qa='+Date.now(),{waitUntil:'load',timeout:25000});
             if(!r?.ok())throw new Error('live social preview unavailable');
             await card.close();
+
+            for(const path of ['robots.txt','sitemap.xml']){
+              const page=await browser.newPage();
+              const r=await page.goto('https://ktiwari539.github.io/satish-os-portfolio/'+path+'?qa='+Date.now(),{waitUntil:'load',timeout:25000});
+              if(!r?.ok())throw new Error('live '+path+' unavailable');
+              const body=await page.locator('body').innerText();
+              if(path==='robots.txt'&&!body.includes('Sitemap: https://ktiwari539.github.io/satish-os-portfolio/sitemap.xml'))throw new Error('live robots.txt missing sitemap declaration');
+              if(path==='sitemap.xml'&&!body.includes('https://ktiwari539.github.io/satish-os-portfolio/'))throw new Error('live sitemap.xml missing canonical URL');
+              await page.close();
+            }
+
             await browser.close();
-            console.log('LIVE PRODUCTION QA PASS');
+            console.log('LIVE PRODUCTION QA PASS + SEARCH DISCOVERY VERIFIED');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
