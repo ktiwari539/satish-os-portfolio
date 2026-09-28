@@ -29,6 +29,11 @@ jobs:
         with:
           ref: review/final-cinematic-20260928
 
+      - name: Install media tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+
       - name: Prepare generated portfolio media
         env:
           WELCOME_URL: 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/9d7347fb-b4b8-4475-ab55-3264b176d6a0.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZTY4YmFkNmMzNzdhMjgzZiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY4NDc4MH0.zWQRoIAoVo8Bmo3-54cTMAFMEastzcX3wUL0znzrn70'
