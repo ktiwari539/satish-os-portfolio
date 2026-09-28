@@ -1,0 +1,180 @@
+name: Build and publish Satish OS final review
+on:
+  push:
+    branches: [review/final-cinematic-20260928]
+    paths:
+      - index.html
+      - styles.css
+      - app.js
+      - .github/workflows/final-review.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: satish-os-final-review
+  cancel-in-progress: true
+
+jobs:
+  build-review:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: review/final-cinematic-20260928
+
+      - name: Prepare generated portfolio media
+        env:
+          WELCOME_URL: 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/9d7347fb-b4b8-4475-ab55-3264b176d6a0.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZTY4YmFkNmMzNzdhMjgzZiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY4NDc4MH0.zWQRoIAoVo8Bmo3-54cTMAFMEastzcX3wUL0znzrn70'
+          EXPLORE_URL: 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/972ffb86-3ff1-4d1a-8573-5128f2f2c931.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZjJhMWYwYzEwNjM1ZjMxNyIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY4OTYwMX0.ctFJTzBmDoktzehpJsryEPOq-23mEfeyYES2BUM-njQ'
+          REFRESH_URL: 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/5564856a-675c-44f1-a95e-df982d7c2709.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMDg1NzIxNDgzYWU1MDYyZiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY4NjI4MH0.nUn99Ek0mRwZtoteqiQvqE6z88UpR7lVLe9FeO0yyq0'
+        run: |
+          set -euo pipefail
+          mkdir -p assets/video assets/resume reports
+          curl -fL --retry 4 --retry-delay 2 "$WELCOME_URL" -o assets/video/satish-welcome.mp4
+          curl -fL --retry 4 --retry-delay 2 "$EXPLORE_URL" -o assets/video/satish-explore.mp4
+          curl -fL --retry 4 --retry-delay 2 "$REFRESH_URL" -o assets/video/satish-refresh-entry.mp4
+          for f in assets/video/satish-welcome.mp4 assets/video/satish-explore.mp4 assets/video/satish-refresh-entry.mp4; do
+            test "$(stat -c%s "$f")" -gt 500000
+            ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of default=nw=1 "$f"
+            ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,channels -of default=nw=1 "$f"
+          done
+          ffmpeg -hide_banner -loglevel error -y -ss 3.8 -i assets/video/satish-welcome.mp4 -frames:v 1 -vf "scale=1280:-2" -q:v 72 assets/video/satish-poster.webp
+          ffmpeg -hide_banner -loglevel error -y -ss 4.2 -i assets/video/satish-explore.mp4 -frames:v 1 -vf "scale=1280:-2" -q:v 72 assets/video/satish-explore-poster.webp
+          ffmpeg -hide_banner -loglevel error -y -ss 7.0 -t 2.6 -i assets/video/satish-welcome.mp4 -an -vf "scale=960:-2,fps=20" -c:v libx264 -crf 30 -preset veryfast -pix_fmt yuv420p -movflags +faststart assets/video/satish-idle.mp4
+
+      - name: Build recruiter-ready resume PDF
+        run: |
+          python3 -m pip install --quiet reportlab
+          cat > /tmp/build_resume.py <<'PY'
+          from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether
+          from reportlab.lib import colors
+          from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+          from reportlab.lib.enums import TA_CENTER
+          from reportlab.lib.pagesizes import A4
+          from reportlab.lib.units import mm
+
+          OUT='assets/resume/Satish_Kumar_Tiwari_Resume.pdf'
+          BLUE=colors.HexColor('#176BC0'); INK=colors.HexColor('#183247'); MUTED=colors.HexColor('#5E7180'); LINE=colors.HexColor('#DCE6ED'); PALE=colors.HexColor('#EEF5FB')
+          doc=SimpleDocTemplate(OUT,pagesize=A4,rightMargin=15*mm,leftMargin=15*mm,topMargin=14*mm,bottomMargin=13*mm,title='Satish Kumar Tiwari - Resume',author='Satish Kumar Tiwari')
+          styles=getSampleStyleSheet()
+          name=ParagraphStyle('name',parent=styles['Title'],fontName='Helvetica-Bold',fontSize=23,leading=25,textColor=INK,alignment=TA_CENTER,spaceAfter=4)
+          role=ParagraphStyle('role',parent=styles['Normal'],fontName='Helvetica-Bold',fontSize=9.5,leading=12,textColor=BLUE,alignment=TA_CENTER,spaceAfter=5)
+          contact=ParagraphStyle('contact',parent=styles['Normal'],fontSize=8.2,leading=11,textColor=MUTED,alignment=TA_CENTER,spaceAfter=10)
+          section=ParagraphStyle('section',parent=styles['Heading2'],fontName='Helvetica-Bold',fontSize=10.5,leading=13,textColor=BLUE,spaceBefore=9,spaceAfter=5)
+          body=ParagraphStyle('body',parent=styles['BodyText'],fontSize=8.6,leading=12.1,textColor=INK,spaceAfter=4)
+          small=ParagraphStyle('small',parent=body,fontSize=8.1,leading=11.4,textColor=MUTED)
+          job=ParagraphStyle('job',parent=body,fontName='Helvetica-Bold',fontSize=9.5,leading=12.2,textColor=INK,spaceBefore=4,spaceAfter=2)
+          bullet=ParagraphStyle('bullet',parent=body,fontSize=8.25,leading=11.5,leftIndent=9,firstLineIndent=-6,bulletIndent=0,spaceAfter=2.5)
+          story=[]
+          story += [Paragraph('SATISH KUMAR TIWARI',name),Paragraph('TECHNICAL OPERATIONS & CUSTOMER SUCCESS LEADER',role),Paragraph('Mumbai, India  ·  ktiwari539@gmail.com  ·  linkedin.com/in/satish-kumar-tiwari-3b12111a8/',contact)]
+          story += [Paragraph('PROFILE',section),Paragraph('Technical operations and customer success leader with 7+ years across production support, automation, incident response and cross-functional delivery. Builds practical operating systems using APIs, Google Apps Script, webhooks and AI-assisted workflows; pairs technical investigation with clear stakeholder communication and measurable process improvement.',body)]
+          metrics=[[Paragraph('<b>99.8%</b><br/><font size="7">uptime SLA supported</font>',small),Paragraph('<b>10+ hrs/week</b><br/><font size="7">manual reporting eliminated</font>',small),Paragraph('<b>40%</b><br/><font size="7">faster MTTA</font>',small),Paragraph('<b>8+</b><br/><font size="7">cross-functional members led</font>',small)]]
+          mt=Table(metrics,colWidths=[43*mm]*4,rowHeights=[17*mm]);mt.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),PALE),('BOX',(0,0),(-1,-1),.5,LINE),('INNERGRID',(0,0),(-1,-1),.5,LINE),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('ALIGN',(0,0),(-1,-1),'CENTER'),('TEXTCOLOR',(0,0),(-1,-1),INK),('LEFTPADDING',(0,0),(-1,-1),4),('RIGHTPADDING',(0,0),(-1,-1),4)]));story+=[Spacer(1,3),mt]
+          story += [Paragraph('CORE CAPABILITIES',section),Paragraph('<b>Automation & Integration:</b> Google Apps Script · REST APIs · Webhooks · Zapier · ChatGPT · GitHub Copilot<br/><b>Operations & Leadership:</b> Incident response · SLA governance · Stakeholder management · Process optimization · Team leadership<br/><b>Data & Visibility:</b> SLA dashboards · Automated reporting · MySQL · Power BI (basic) · MS Office',body)]
+          story += [Paragraph('PROFESSIONAL EXPERIENCE',section),Paragraph('Customer Success Manager  |  Raw Engineering  |  Jul 2023 – Present',job)]
+          bullets=[
+          'Spearheaded support operations for NBA and F1 Racing applications, maintaining a 99.8% uptime SLA across a global user base.',
+          'Built automated reporting pipelines with Google Apps Script, eliminating 10+ hours of weekly manual reporting effort.',
+          'Designed Slack webhook incident alerts that reduced mean time to acknowledge (MTTA) by 40%.',
+          'Integrated REST APIs across internal tools, cutting manual data-entry errors by 60% and improving operational accuracy.',
+          'Developed SLA dashboards that improved stakeholder visibility by 40% and supported data-driven quarterly business reviews.',
+          'Reduced operational costs by 15% through tool consolidation, process re-engineering and automation.',
+          'Implemented automated monitoring that reduced ticket resolution time by 30% and improved team throughput.',
+          'Led cross-functional teams of 8+ across technical and business functions and conducted QBRs with C-level stakeholders.'
+          ]
+          for b in bullets: story.append(Paragraph('• '+b,bullet))
+          story += [Paragraph('Technical Support Engineer  |  Whitehat Education Technology  |  Sep 2020 – Jul 2023',job)]
+          for b in [
+          'Achieved 95% CSAT through proactive issue resolution and personalized support strategies.',
+          'Automated ticket categorization and escalation with Google Apps Script, reducing manual triage time by 30%.',
+          'Created 200+ knowledge-base articles using AI-assisted workflows, deflecting 35% of routine support queries.',
+          'Reduced average ticket handling time from 48 to 24 hours through process redesign and tooling improvements.',
+          'Trained 25+ team members and migrated 3 legacy systems to modern platforms with zero downtime.',
+          'Recognized as Employee of the Quarter twice for performance, innovation and mentorship.'
+          ]: story.append(Paragraph('• '+b,bullet))
+          story.append(PageBreak())
+          story += [Paragraph('SATISH KUMAR TIWARI',ParagraphStyle('p2',parent=name,fontSize=15,leading=18,alignment=0,spaceAfter=2)),Paragraph('TECHNICAL OPERATIONS & CUSTOMER SUCCESS LEADER',ParagraphStyle('p2r',parent=role,alignment=0,spaceAfter=7))]
+          story += [Paragraph('PROFESSIONAL EXPERIENCE · CONTINUED',section),Paragraph('Associate Support Engineer  |  Times Internet  |  Jan 2019 – Sep 2020',job)]
+          for b in [
+          'Handled 50+ customer inquiries daily with a 90% first-contact resolution rate using structured troubleshooting.',
+          'Reduced escalations by 25% through stronger documentation, training and proactive issue identification.',
+          'Partnered with product teams on 12 customer-requested features that improved product usability.',
+          'Authored technical manuals and onboarding guides that reduced new-hire ramp-up time by two weeks.'
+          ]: story.append(Paragraph('• '+b,bullet))
+          story += [Paragraph('SELECTED PROJECTS',section)]
+          projects=[
+          ('AI-Powered Slack Alerting & Auto-Reporting','Built a Google Apps Script and webhook pipeline for real-time incident alerts; automated operational reports through APIs and added AI-assisted ticket-trend summarization for leadership visibility.'),
+          ('Edba – School/College Management Software','Developed institution-management workflows covering admissions, fees, daily operations and reporting; automated 15+ administrative processes and integrated payment and student-data systems.'),
+          ('InResto CPOS – Point of Sale Implementation','Owned multi-city rollout as SPOC, trained 50+ team members and reduced transaction errors by 30% through configuration and troubleshooting improvements.')
+          ]
+          for title,desc in projects: story += [Paragraph(title,job),Paragraph(desc,small)]
+          story += [Paragraph('LEADERSHIP & RECOGNITION',section),Paragraph('Cross-functional team leadership · C-level QBR facilitation · Incident communication · Process improvement · Employee of the Quarter ×2',body)]
+          story += [Paragraph('EDUCATION',section),Paragraph('<b>B.Tech — Electronics & Communication Engineering</b><br/>Rajiv Gandhi Proudyogiki Vishwavidyalaya (RGPV), Bhopal · 2016–2020',body),Paragraph('<b>Diploma — DCA</b> · Maharishi Mahesh Yogi Vedic Vishwavidyalaya, Jabalpur · 2013–2014',body),Paragraph('<b>XII (PCM) & X</b> · St. Mary’s Higher Secondary School, Jabalpur · 2013 / 2011',body)]
+          story += [Spacer(1,5),Paragraph('Portfolio: Satish OS · References and additional project context available on request.',small)]
+          doc.build(story)
+          print(OUT)
+          PY
+          python3 /tmp/build_resume.py
+          test "$(stat -c%s assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 30000
+
+      - name: Static quality checks
+        run: |
+          set -euo pipefail
+          node --check app.js
+          grep -q 'satish-refresh-entry.mp4' app.js
+          grep -q 'satish-explore.mp4' index.html
+          grep -q 'Satish_Kumar_Tiwari_Resume.pdf' index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          files=[
+            'index.html','styles.css','app.js',
+            'assets/video/satish-welcome.mp4',
+            'assets/video/satish-explore.mp4',
+            'assets/video/satish-refresh-entry.mp4',
+            'assets/video/satish-idle.mp4',
+            'assets/video/satish-poster.webp',
+            'assets/video/satish-explore-poster.webp',
+            'assets/resume/Satish_Kumar_Tiwari_Resume.pdf'
+          ]
+          report={'status':'PASS','scope':'static/media validation','files':{}}
+          for f in files:
+            p=Path(f); assert p.exists() and p.stat().st_size>0,f
+            report['files'][f]=p.stat().st_size
+          Path('reports/final-review.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(report,indent=2))
+          PY
+
+      - name: Commit generated review assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/video assets/resume reports/final-review.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add final cinematic media and recruiter resume"
+            git push origin HEAD:review/final-cinematic-20260928
+          fi
+
+      - name: Assemble isolated review site
+        run: |
+          rm -rf _site
+          mkdir -p _site/assets/video _site/assets/resume
+          cp index.html styles.css app.js _site/
+          cp assets/video/* _site/assets/video/
+          cp assets/resume/Satish_Kumar_Tiwari_Resume.pdf _site/assets/resume/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy GitHub Pages review
+        id: deployment
+        uses: actions/deploy-pages@v4
