@@ -1,0 +1,67 @@
+name: QA interactive 3D Satish
+on:
+  push:
+    branches: [feature/interactive-3d-satish]
+    paths:
+      - interactive-3d.html
+      - interactive-3d.js
+      - .github/workflows/interactive-3d-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser
+        run: |
+          npm install --no-save playwright@1.55.0 >/dev/null
+          npx playwright install chromium >/dev/null
+      - name: Run interaction QA
+        run: |
+          python3 -m http.server 4174 >/tmp/satish3d-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          mkdir -p reports/interactive-3d
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const results=[];
+            for(const v of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              const page=await browser.newPage({viewport:{width:v.width,height:v.height}});
+              const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error') errors.push(m.text())});
+              await page.goto('http://127.0.0.1:4174/interactive-3d.html',{waitUntil:'networkidle',timeout:45000});
+              await page.waitForFunction(()=>window.__SATISH3D__?.ready===true,{timeout:20000});
+              const stage=page.locator('#stage');const box=await stage.boundingBox();
+              await page.mouse.move(box.x+box.width*.84,box.y+box.height*.30);
+              await page.waitForTimeout(650);
+              const right=await page.evaluate(()=>({...window.__SATISH3D__}));
+              if(!(right.headYaw>0.04) || !(right.eyeX>0.01)) throw new Error(v.name+' rightward tracking failed '+JSON.stringify(right));
+              await page.mouse.move(box.x+box.width*.18,box.y+box.height*.68);
+              await page.waitForTimeout(650);
+              const left=await page.evaluate(()=>({...window.__SATISH3D__}));
+              if(!(left.headYaw<-.04) || !(left.eyeX<-.01)) throw new Error(v.name+' leftward tracking failed '+JSON.stringify(left));
+              await page.locator('#waveBtn').click();
+              await page.waitForTimeout(450);
+              const wave=await page.evaluate(()=>({...window.__SATISH3D__}));
+              if(!wave.waving) throw new Error(v.name+' wave did not start');
+              await page.screenshot({path:'reports/interactive-3d/'+v.name+'.png',fullPage:true});
+              if(errors.length) throw new Error(v.name+' console errors: '+errors.join(' | '));
+              results.push({viewport:v.name,status:'PASS',rightYaw:right.headYaw,leftYaw:left.headYaw,rightEye:right.eyeX,leftEye:left.eyeX,wave:true});
+              await page.close();
+            }
+            await browser.close();
+            fs.writeFileSync('reports/interactive-3d/qa.json',JSON.stringify({status:'PASS',results},null,2)+'\n');
+            console.log(JSON.stringify({status:'PASS',results},null,2));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: interactive-3d-satish-qa
+          path: reports/interactive-3d/
