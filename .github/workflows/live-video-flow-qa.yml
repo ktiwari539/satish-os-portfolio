@@ -40,7 +40,8 @@ jobs:
             });
             const errors=[];
             page.on('pageerror',e=>errors.push('pageerror: '+e.message));
-            page.on('console',m=>{if(m.type()==='error') errors.push('console: '+m.text())});
+            page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource')) errors.push('console: '+m.text())});
+            page.on('response',r=>{if(r.status()>=400&&!r.url().endsWith('/favicon.ico')) errors.push('http '+r.status()+': '+r.url())});
             const url='https://ktiwari539.github.io/satish-os-portfolio/review-current.html?qa='+Date.now();
             await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
             for(const path of ['assets/video/satish-welcome.mp4','assets/video/satish-refresh-entry.mp4','assets/video/satish-explore.mp4']){
