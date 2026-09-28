@@ -43,3 +43,80 @@
 .brand-restart{color:inherit;text-decoration:none;cursor:pointer;width:max-content;max-width:100%}
 .brand-restart:hover{color:inherit;text-decoration:none}
 .brand-restart:focus-visible{outline:3px solid rgba(36,111,229,.42);outline-offset:6px;border-radius:8px}
+
+/* 2026-09-28 portfolio polish — impact-led, incremental enhancement */
+.impact-ribbon{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 18px}
+.impact-ribbon>div{min-height:98px;padding:18px 20px;border-radius:18px;background:linear-gradient(145deg,#f8fbfd,#eef5fb);border:1px solid #dce7ee;box-shadow:0 10px 30px rgba(25,67,94,.05)}
+.impact-ribbon strong{display:block;font-size:26px;line-height:1;color:#176bc0;letter-spacing:-.04em}
+.impact-ribbon span{display:block;margin-top:8px;color:#657a89;font-size:10px;line-height:1.5;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+
+.journey-item{position:relative;transition:.24s}
+.journey-item:before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:3px;background:transparent;border-radius:8px;transition:.24s}
+.journey-item:hover{background:linear-gradient(90deg,rgba(232,242,250,.65),transparent 74%)}
+.journey-item:hover:before{background:#246fe5}
+.timeline-when{display:flex;flex-direction:column;gap:7px}
+.timeline-when i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#eef5fb;color:#246fe5;font-size:9px;font-weight:900;border:1px solid #d8e6ef}
+.journey-impact{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.journey-impact span{padding:7px 9px;border:1px solid #dae6ec;border-radius:20px;background:#fff;color:#687e8b;font-size:9px;font-weight:800}
+.journey-impact b{color:#1b5f9d}
+
+.project-evidence{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:14px 0 0}
+.project-evidence span{padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(215,227,235,.9);font-size:8px;color:#6a8191;font-weight:800;line-height:1.35}
+.project-evidence b{display:block;color:#1e65aa;font-size:13px;margin-bottom:2px}
+.work-principles{margin-top:20px;padding:17px 20px;border-radius:18px;border:1px solid #dbe6ec;background:linear-gradient(90deg,#f9fbfc,#edf5fb);display:flex;align-items:center;justify-content:space-between;gap:12px;color:#42627a;font-size:9px;font-weight:900;letter-spacing:.08em}
+.work-principles i{font-style:normal;color:#2f78c8;font-size:15px}
+
+.skill-panels button.skill-card{appearance:none;text-align:left;padding:28px;border-radius:20px;background:white;border:1px solid #dce5e9;color:inherit;transition:.24s;cursor:pointer;box-shadow:0 9px 32px rgba(21,69,92,.04)}
+.skill-panels button.skill-card:hover,.skill-panels button.skill-card.active{transform:translateY(-4px);border-color:#bcd3e4;box-shadow:0 18px 46px rgba(21,69,92,.1)}
+.skill-panels button.skill-card.active{background:linear-gradient(145deg,#f8fbff,#eaf3ff)}
+.skill-card>span{color:#2c78a7;font-size:10px;font-weight:900}
+.skill-card h3{font-size:20px;letter-spacing:-.035em}
+.skill-card p{color:var(--muted);font-size:13px;line-height:1.8}
+.skill-card>b{display:block;margin-top:18px;color:#246fe5;font-size:9px;letter-spacing:.12em}
+.toolkit-console{margin-top:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:26px;padding:27px;border-radius:22px;background:#102f4b;color:#fff;box-shadow:0 24px 60px rgba(21,54,78,.16)}
+.toolkit-console h3{font-size:clamp(25px,2.5vw,38px);margin:10px 0 8px;letter-spacing:-.04em}
+.toolkit-console p{color:#bdd0dd;max-width:650px;line-height:1.75;font-size:12px}
+.toolkit-console .eyebrow{color:#7fc2f6}
+.toolkit-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;align-self:center}
+.toolkit-flow span{padding:11px 12px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#d8e9f5;font-size:9px;font-weight:900;letter-spacing:.08em}
+.toolkit-flow i{font-style:normal;color:#69bdf9}
+
+.resume-focus{display:flex;flex-wrap:wrap;gap:7px;margin:-8px 0 22px}
+.resume-focus span{padding:8px 10px;border-radius:20px;background:#fff;border:1px solid #d6e4ed;color:#3b6380;font-size:8px;font-weight:900;letter-spacing:.1em}
+.resume-actions .btn{font-family:inherit}
+.paper-status{position:absolute;top:18px;right:18px;padding:6px 8px;border-radius:14px;background:#e8f5ed;color:#236c4f;font-size:7px;font-weight:900;letter-spacing:.1em}
+.paper-summary{text-align:center;color:#6b8090;font-size:8px;margin:-14px 0 21px}
+.paper-metrics i{display:grid;place-items:center;font-style:normal;color:#1a5f9c;font-size:12px}
+.paper-metrics i b{font-size:13px}
+
+.collaboration-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:30px 0}
+.collaboration-grid>div{padding:18px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px)}
+.collaboration-grid span{display:block;color:#79bdf1;font-size:9px;font-weight:900;letter-spacing:.1em;margin-bottom:12px}
+.collaboration-grid b{display:block;font-size:14px;color:#fff;margin-bottom:6px}
+.collaboration-grid small{display:block;color:#aec3d2;font-size:10px;line-height:1.55}
+
+.project-impact-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}
+.project-impact-panel div{padding:13px;border-radius:13px;background:#f1f6fa;border:1px solid #e0e8ed}
+.project-impact-panel b{display:block;color:#176bc0;font-size:18px}
+.project-impact-panel span{color:#6b808f;font-size:9px;line-height:1.4}
+.modal-systems{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 18px}
+.modal-systems span{padding:7px 9px;border-radius:20px;background:#eaf3fb;color:#2a638e;font-size:8px;font-weight:900;letter-spacing:.06em}
+
+@media(max-width:900px){
+  .impact-ribbon{grid-template-columns:repeat(2,1fr)}
+  .toolkit-console{grid-template-columns:1fr}
+  .work-principles{flex-wrap:wrap;justify-content:flex-start}
+  .collaboration-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .impact-ribbon{grid-template-columns:1fr 1fr;gap:7px}
+  .impact-ribbon>div{padding:14px;min-height:86px}
+  .impact-ribbon strong{font-size:22px}
+  .journey-impact{gap:6px}
+  .journey-impact span{font-size:8px}
+  .project-evidence{grid-template-columns:1fr}
+  .work-principles{font-size:8px}
+  .work-principles i{display:none}
+  .toolkit-console{padding:20px}
+  .project-impact-panel{grid-template-columns:1fr}
+}
