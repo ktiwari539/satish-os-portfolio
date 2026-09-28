@@ -121,7 +121,7 @@
   .project-impact-panel{grid-template-columns:1fr}
 }
 
-/* Optional true-3D avatar layer. Disabled unless ?character=3d is present. */
+
 .hero-character-3d{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:block;opacity:0;transition:opacity .45s ease;background:transparent}
 .character-3d-ready .hero-character-3d{opacity:1}
 .character-3d-ready .hero-idle{opacity:0;pointer-events:none}
@@ -136,14 +136,3 @@
 .character-3d-ready .visual-caption,
 .character-3d-ready .visual-orbit{z-index:4}
 
-/* Avaturn full-body presentation inside the approved workspace. */
-.character-3d-ready{background:
-  radial-gradient(circle at 78% 16%,rgba(104,177,236,.34),transparent 26%),
-  radial-gradient(circle at 24% 82%,rgba(245,196,130,.22),transparent 28%),
-  linear-gradient(145deg,#eaf2f7 0%,#dce8ef 48%,#eef3f5 100%);}
-.character-3d-ready .hero-character-3d{filter:drop-shadow(0 24px 28px rgba(17,45,65,.18))}
-@media(max-width:620px){
-  .character-3d-ready{background:
-    radial-gradient(circle at 72% 18%,rgba(104,177,236,.3),transparent 28%),
-    linear-gradient(145deg,#eaf2f7,#dfe9ee 58%,#f4eee5)}
-}
