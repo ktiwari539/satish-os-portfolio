@@ -1,0 +1,47 @@
+name: Publish Satish OS review
+on:
+  push:
+    branches: [review/final-cinematic-20260928]
+    paths:
+      - index.html
+      - styles.css
+      - app.js
+      - assets/**
+      - .github/workflows/review-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: satish-os-review-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: review/final-cinematic-20260928
+      - name: Assemble review site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          cp index.html styles.css app.js _site/
+          cp -R assets _site/
+          touch _site/.nojekyll
+          test -f _site/assets/video/satish-welcome.mp4
+          test -f _site/assets/video/satish-explore.mp4
+          test -f _site/assets/video/satish-refresh-entry.mp4
+          test -f _site/assets/resume/Satish_Kumar_Tiwari_Resume.pdf
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy review
+        id: deployment
+        uses: actions/deploy-pages@v4
