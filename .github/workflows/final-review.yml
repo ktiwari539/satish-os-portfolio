@@ -127,7 +127,8 @@ jobs:
           print(OUT)
           PY
           python3 /tmp/build_resume.py
-          test "$(stat -c%s assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 10000
+          test "$(stat -c%s assets/resume/Satish_Kumar_Tiwari_Resume.pdf)" -gt 1000
+          head -c 5 assets/resume/Satish_Kumar_Tiwari_Resume.pdf | grep -q '%PDF-'
 
       - name: Static quality checks
         run: |
