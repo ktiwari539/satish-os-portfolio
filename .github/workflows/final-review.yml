@@ -158,16 +158,6 @@ jobs:
           print(json.dumps(report,indent=2))
           PY
 
-      - name: Commit generated review assets
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/video assets/resume reports/final-review.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Add final cinematic media and recruiter resume"
-            git push origin HEAD:review/final-cinematic-20260928
-          fi
-
       - name: Assemble isolated review site
         run: |
           rm -rf _site
