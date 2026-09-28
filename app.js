@@ -23,7 +23,7 @@ function toggleSound(video,button,help){
 }
 function configureEntry(forceWalkIn=false){
   const source=$('introSource'); if(!source)return;
-  const refresh=(forceWalkIn||forcedWalkIn||isReload)&&!reduced;
+  const refresh=forceWalkIn||forcedWalkIn||isReload;
   const selectedSrc=refresh?refreshSrc:welcomeSrc;
   source.src=selectedSrc;
   introVideo.src=selectedSrc;
@@ -40,12 +40,38 @@ function tickIntro(){
   $('introProgress').style.transform='scaleX('+p+')';
   progressId=requestAnimationFrame(tickIntro);
 }
-function openIntro(withSound=false){
+function playReliable(video,button,help,preferSound=false){
+  if(!video)return;
+  let attempted=false;
+  const attempt=()=>{
+    if(attempted&&video.currentTime>0&&!video.paused)return;
+    attempted=true;
+    const result=video.play();
+    if(result?.catch)result.catch(()=>{
+      if(!video.muted){
+        setSound(video,button,false);
+        video.play().then(()=>{help.textContent='Video is playing. Tap Turn sound on if you want audio.'}).catch(()=>{
+          help.textContent='Tap Replay to start the video.';
+        });
+      }else{
+        help.textContent='Tap Replay to start the video.';
+      }
+    });
+  };
+  if(video.readyState>=2)attempt();
+  else{
+    video.addEventListener('canplay',attempt,{once:true});
+    video.addEventListener('loadeddata',attempt,{once:true});
+    video.load();
+    setTimeout(attempt,900);
+  }
+}
+function openIntro(withSound=false,forceMotion=false){
   focusReturn=document.activeElement; introOpen=true; intro.hidden=false; document.body.classList.add('intro-open');
   heroIdle?.pause(); introVideo.currentTime=0; setSound(introVideo,$('introSound'),withSound);
   $('introProgress').style.transform='scaleX(0)';
-  if(reduced){introHelp.textContent='Reduced-motion preference detected. Enter when ready.';return}
-  introVideo.play().catch(()=>{introHelp.textContent='Autoplay is blocked. Use Enter or Watch intro again.'});
+  if(reduced&&!forceMotion){introHelp.textContent='Reduced-motion preference detected. Use Watch intro if you want to play the video.';return}
+  playReliable(introVideo,$('introSound'),introHelp,withSound);
   progressId=requestAnimationFrame(tickIntro);
 }
 function closeIntro(destination){
@@ -66,7 +92,10 @@ function openExplore(withSound=true){
   focusReturn=document.activeElement; exploreOpen=true; explore.hidden=false; document.body.classList.add('intro-open');
   heroIdle?.pause(); exploreVideo.currentTime=0; setSound(exploreVideo,$('exploreSound'),withSound);
   exploreHelp.textContent='A short invitation into the work. Skip whenever you like.';
-  if(!reduced){exploreVideo.play().catch(()=>{exploreHelp.textContent='Playback was blocked. Select Replay invitation or See projects.'});exploreProgressId=requestAnimationFrame(tickExplore)}
+  if(!reduced){
+    playReliable(exploreVideo,$('exploreSound'),exploreHelp,withSound);
+    exploreProgressId=requestAnimationFrame(tickExplore);
+  }
 }
 function closeExplore(scroll=true){
   if(!exploreOpen)return;
@@ -75,18 +104,35 @@ function closeExplore(scroll=true){
 }
 $('introSound')?.addEventListener('click',()=>toggleSound(introVideo,$('introSound'),introHelp));
 $('exploreSound')?.addEventListener('click',()=>toggleSound(exploreVideo,$('exploreSound'),exploreHelp));
-$('replayBtn')?.addEventListener('click',()=>openIntro(true));
+$('replayBtn')?.addEventListener('click',()=>{configureEntry(false);openIntro(true,true)});
 $('enterSite')?.addEventListener('click',()=>closeIntro());
 $('skipIntro')?.addEventListener('click',()=>closeIntro());
 $('introProjects')?.addEventListener('click',()=>{closeIntro();openExplore(true)});
 $('exploreBtn')?.addEventListener('click',()=>openExplore(true));
 $('exploreEnter')?.addEventListener('click',()=>closeExplore(true));
 $('exploreSkip')?.addEventListener('click',()=>closeExplore(true));
-$('exploreReplay')?.addEventListener('click',()=>{exploreVideo.currentTime=0;exploreVideo.play().catch(()=>{})});
+$('exploreReplay')?.addEventListener('click',()=>{exploreVideo.currentTime=0;playReliable(exploreVideo,$('exploreSound'),exploreHelp,!exploreVideo.muted)});
 introVideo?.addEventListener('ended',()=>closeIntro());
 exploreVideo?.addEventListener('ended',()=>closeExplore(true));
 introVideo?.addEventListener('error',()=>{introHelp.textContent='The cinematic video could not load. You can still enter the portfolio.'});
 exploreVideo?.addEventListener('error',()=>{exploreHelp.textContent='The invitation video could not load. Continue to the projects.'});
+
+function restartWalkIn(event){
+  event?.preventDefault?.();
+  if(!modal?.hidden)closeProject();
+  if(exploreOpen)closeExplore(false);
+  if(introOpen)closeIntro();
+  window.scrollTo({top:0,left:0,behavior:'auto'});
+  configureEntry(true);
+  openIntro(false,true);
+  try{
+    const url=new URL(location.href);
+    url.searchParams.set('entry','walkin');
+    url.hash='home';
+    history.replaceState(null,'',url.pathname+url.search+url.hash);
+  }catch(_){}
+}
+document.querySelectorAll('[data-walkin-restart]').forEach(el=>el.addEventListener('click',restartWalkIn));
 
 const projects={
  reliability:{kicker:'01 / PLATFORM RELIABILITY',title:'When a signal becomes a response.',summary:'An illustrative incident-response workflow: detect a signal, acknowledge impact, coordinate mitigation and confirm recovery.',details:[['CHALLENGE','Production issues need timely context, clear ownership and reliable communication—not just another alert.'],['APPROACH','Bring monitoring, escalation, response checkpoints and stakeholder updates into one traceable workflow.'],['INTERACTION','Trigger the synthetic incident, acknowledge it, mitigate it and verify recovery. No real client systems or customer information are connected.']]},
