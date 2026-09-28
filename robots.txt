@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ktiwari539.github.io/satish-os-portfolio/sitemap.xml
