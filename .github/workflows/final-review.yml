@@ -197,7 +197,7 @@ jobs:
               await page.locator('#exploreSequence').waitFor({state:'visible',timeout:3000});
               await page.locator('#exploreSkip').click();
               await page.locator('#projects').scrollIntoViewIfNeeded();
-              await page.locator('[data-open="reliability"]').click();
+              await page.locator('.project-card [data-open="reliability"]').click();
               await page.locator('#projectModal').waitFor({state:'visible',timeout:3000});
               await page.locator('#triggerLab').click();
               await page.locator('#ackLab').click();
