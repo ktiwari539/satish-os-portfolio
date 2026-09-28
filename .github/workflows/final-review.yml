@@ -177,12 +177,69 @@ jobs:
           cp assets/resume/Satish_Kumar_Tiwari_Resume.pdf _site/assets/resume/
           touch _site/.nojekyll
 
-      - uses: actions/configure-pages@v5
+      - name: Run desktop and mobile browser QA
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright@1.55.0 >/dev/null
+          npx playwright install chromium >/dev/null
+          python3 -m http.server 4173 --directory _site >/tmp/satish-os-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          node <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const results=[];
+            for(const v of [{name:'desktop',width:1440,height:900},{name:'mobile',width:390,height:844}]){
+              const page=await browser.newPage({viewport:{width:v.width,height:v.height}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(e.message));
+              page.on('console',m=>{if(m.type()==='error') errors.push('console: '+m.text())});
+              const res=await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:30000});
+              if(!res || !res.ok()) throw new Error(v.name+' page failed: '+(res&&res.status()));
+              await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+              await page.screenshot({path:'reports/final-'+v.name+'-intro.png',fullPage:false});
+              await page.locator('#skipIntro').click();
+              await page.locator('#intro').waitFor({state:'hidden',timeout:3000});
+              await page.locator('#exploreBtn').click();
+              await page.locator('#exploreSequence').waitFor({state:'visible',timeout:3000});
+              await page.locator('#exploreSkip').click();
+              await page.locator('#projects').scrollIntoViewIfNeeded();
+              await page.locator('[data-open="reliability"]').click();
+              await page.locator('#projectModal').waitFor({state:'visible',timeout:3000});
+              await page.locator('#triggerLab').click();
+              await page.locator('#ackLab').click();
+              await page.locator('#mitigateLab').click();
+              await page.locator('#resolveLab').click();
+              const status=await page.locator('#labStatus').innerText();
+              if(!status.includes('RECOVERED')) throw new Error(v.name+' incident lab did not recover');
+              await page.locator('#closeModal').click();
+              const resumeHref=await page.locator('#resume a[download]').getAttribute('href');
+              const resumeRes=await page.request.get(new URL(resumeHref,'http://127.0.0.1:4173/').href);
+              if(!resumeRes.ok()) throw new Error(v.name+' resume failed '+resumeRes.status());
+              for(const path of ['assets/video/satish-welcome.mp4','assets/video/satish-explore.mp4','assets/video/satish-refresh-entry.mp4']){
+                const rr=await page.request.get('http://127.0.0.1:4173/'+path);
+                if(!rr.ok()) throw new Error(v.name+' media failed '+path+' '+rr.status());
+              }
+              const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+4);
+              if(overflow) throw new Error(v.name+' horizontal overflow');
+              await page.screenshot({path:'reports/final-'+v.name+'-home.png',fullPage:true});
+              results.push({viewport:v.name,status:'PASS',pageErrors:errors});
+              if(errors.length) throw new Error(v.name+' browser errors: '+errors.join(' | '));
+              await page.close();
+            }
+            await browser.close();
+            fs.writeFileSync('reports/browser-final.json',JSON.stringify({status:'PASS',results},null,2)+'\n');
+            console.log(JSON.stringify({status:'PASS',results},null,2));
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Upload browser QA evidence
+        uses: actions/upload-artifact@v4
         with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - name: Deploy GitHub Pages review
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: satish-os-final-browser-qa
+          path: |
+            reports/browser-final.json
+            reports/final-*.png
