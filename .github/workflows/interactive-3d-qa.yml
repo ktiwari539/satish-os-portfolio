@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/interactive-3d-satish]
     paths:
-      - interactive-3d.html
+      - interactive-3d-preview.html
       - interactive-3d.js
       - .github/workflows/interactive-3d-qa.yml
   workflow_dispatch:
