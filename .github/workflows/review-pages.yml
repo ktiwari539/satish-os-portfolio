@@ -1,4 +1,5 @@
 name: Publish Satish OS review
+# faststart video deploy
 on:
   push:
     branches: [review/final-cinematic-20260928]
