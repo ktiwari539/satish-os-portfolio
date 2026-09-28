@@ -1,4 +1,5 @@
 name: Publish interactive 3D Satish lab
+# Pages enabled in repository settings
 on:
   push:
     branches: [feature/interactive-3d-satish]
