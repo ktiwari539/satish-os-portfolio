@@ -1,0 +1,97 @@
+name: Verify live Satish OS video flows
+on:
+  push:
+    branches: [review/final-cinematic-20260928]
+    paths:
+      - index.html
+      - app.js
+      - styles.css
+      - .github/workflows/live-video-flow-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: satish-os-live-video-flow
+  cancel-in-progress: true
+
+jobs:
+  live-browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium test runtime
+        run: |
+          npm install --no-save playwright@1.55.0 >/dev/null
+          npx playwright install chromium >/dev/null
+      - name: Verify deployed welcome, walk-in, and explore videos
+        run: |
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+            const page=await browser.newPage({
+              viewport:{width:1440,height:900},
+              reducedMotion:'no-preference'
+            });
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error') errors.push('console: '+m.text())});
+            const url='https://ktiwari539.github.io/satish-os-portfolio/review-current.html?qa='+Date.now();
+            await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+            await page.locator('#intro').waitFor({state:'visible',timeout:8000});
+
+            async function assertPlaying(selector,expected,label){
+              const video=page.locator(selector);
+              await page.waitForFunction(({selector,expected})=>{
+                const v=document.querySelector(selector);
+                return v && v.currentSrc.includes(expected);
+              },{selector,expected},{timeout:8000});
+              const before=await video.evaluate(v=>v.currentTime);
+              await page.waitForTimeout(1400);
+              const state=await video.evaluate(v=>({currentTime:v.currentTime,paused:v.paused,readyState:v.readyState,src:v.currentSrc}));
+              if(state.currentTime<=before+.15 || state.paused){
+                throw new Error(label+' is not playing: '+JSON.stringify({before,...state}));
+              }
+              console.log(label+' PASS '+JSON.stringify(state));
+            }
+
+            await assertPlaying('#introVideo','satish-welcome.mp4','initial welcome');
+
+            await page.locator('#skipIntro').click();
+            await page.locator('#intro').waitFor({state:'hidden',timeout:4000});
+
+            await page.locator('#satishLogo').click();
+            await page.locator('#intro').waitFor({state:'visible',timeout:4000});
+            await assertPlaying('#introVideo','satish-refresh-entry.mp4','header logo walk-in');
+
+            const t1=await page.locator('#introVideo').evaluate(v=>v.currentTime);
+            await page.locator('#intro .brand-restart').click();
+            await page.waitForTimeout(250);
+            const restarted=await page.locator('#introVideo').evaluate(v=>v.currentTime);
+            if(restarted>=t1) throw new Error('intro SATISH.OS did not restart video: '+t1+' -> '+restarted);
+            await assertPlaying('#introVideo','satish-refresh-entry.mp4','intro logo restart');
+
+            await page.locator('#skipIntro').click();
+            await page.locator('#exploreBtn').click();
+            await page.locator('#exploreSequence').waitFor({state:'visible',timeout:4000});
+            await assertPlaying('#exploreVideo','satish-explore.mp4','explore invitation');
+
+            await page.locator('#exploreSequence .brand-restart').click();
+            await page.locator('#intro').waitFor({state:'visible',timeout:4000});
+            await assertPlaying('#introVideo','satish-refresh-entry.mp4','explore logo to walk-in');
+
+            await page.locator('#skipIntro').click();
+            await page.locator('#projects').scrollIntoViewIfNeeded();
+            await page.locator('#satishLogo').click();
+            await page.locator('#intro').waitFor({state:'visible',timeout:4000});
+            await assertPlaying('#introVideo','satish-refresh-entry.mp4','projects logo to walk-in');
+
+            if(errors.length)throw new Error(errors.join(' | '));
+            console.log('LIVE VIDEO FLOW QA PASS');
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
