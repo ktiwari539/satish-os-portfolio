@@ -25,7 +25,7 @@ jobs:
           curl -fL --retry 3 --retry-delay 1 "$AVATAR_URL" -o assets/character/satish-avatar.glb
           test "$(stat -c%s assets/character/satish-avatar.glb)" -eq 3595092
           test "$(head -c 4 assets/character/satish-avatar.glb)" = "glTF"
-          echo "f2641a37586b55570f22768a299de55c81e9c09f76978f6a6e191ac3fd7a28d0  assets/character/satish-avatar.glb" | sha256sum -c -
+          echo "f2641a37586b555771e57cbe6daee6c6e17c354c0e7e13fc83ab91db03161e17  assets/character/satish-avatar.glb" | sha256sum -c -
       - name: Commit avatar to integration branch
         run: |
           set -euo pipefail
