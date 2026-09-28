@@ -96,8 +96,16 @@ jobs:
               }
             }
 
+            const primary=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+            await primary.goto('http://127.0.0.1:4182/?qa=primary-'+Date.now(),{waitUntil:'domcontentloaded',timeout:30000});
+            await primary.locator('#intro').waitFor({state:'visible',timeout:8000});
+            await primary.locator('#skipIntro').click();
+            const primaryState=await primary.locator('#heroIdle').evaluate(v=>({scene:v.dataset.scene,src:v.currentSrc}));
+            if(primaryState.scene!=='light'||!primaryState.src.includes('satish-workday-white.mp4'))throw new Error('default hero is not the approved white-shirt workday: '+JSON.stringify(primaryState));
+            await primary.close();
+
             const social=await browser.newPage({viewport:{width:1200,height:630},deviceScaleFactor:1,reducedMotion:'no-preference'});
-            await social.goto('http://127.0.0.1:4182/?hero=dark&social=1',{waitUntil:'domcontentloaded',timeout:30000});
+            await social.goto('http://127.0.0.1:4182/?hero=light&social=1',{waitUntil:'domcontentloaded',timeout:30000});
             await social.locator('#intro').waitFor({state:'visible',timeout:8000});
             await social.locator('#skipIntro').click();
             await social.locator('.hero-visual').waitFor({state:'visible',timeout:4000});
@@ -148,6 +156,15 @@ jobs:
               if(state.loop)throw new Error('live '+scene+' hero must not hard-loop');
               await page.close();
             }
+            const primary=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+            const pr=await primary.goto('https://ktiwari539.github.io/satish-os-portfolio/?primary='+Date.now(),{waitUntil:'domcontentloaded',timeout:25000});
+            if(!pr?.ok())throw new Error('live primary site unavailable');
+            await primary.locator('#intro').waitFor({state:'visible',timeout:8000});
+            await primary.locator('#skipIntro').click();
+            const primaryState=await primary.locator('#heroIdle').evaluate(v=>({scene:v.dataset.scene,src:v.currentSrc}));
+            if(primaryState.scene!=='light'||!primaryState.src.includes('satish-workday-white.mp4'))throw new Error('live default hero is not the white-shirt workday');
+            await primary.close();
+
             const card=await browser.newPage();
             const r=await card.goto('https://ktiwari539.github.io/satish-os-portfolio/assets/social-preview.png?qa='+Date.now(),{waitUntil:'load',timeout:25000});
             if(!r?.ok())throw new Error('live social preview unavailable');

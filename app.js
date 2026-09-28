@@ -18,25 +18,21 @@ const heroScenes={
 };
 let heroReplayTimer=0;
 
-function selectHeroScene(){
-  if(!heroIdle)return;
-  let key=heroSceneOverride==='dark'||heroSceneOverride==='light'?heroSceneOverride:null;
-  if(!key){try{key=sessionStorage.getItem('satishHeroScene')}catch(_){}}
-  if(!heroScenes[key]){
-    let last=null;try{last=localStorage.getItem('satishHeroLastScene')}catch(_){}
-    key=last==='light'?'dark':'light';
-    try{sessionStorage.setItem('satishHeroScene',key);localStorage.setItem('satishHeroLastScene',key)}catch(_){}
-  }
+function setHeroScene(key){
+  if(!heroIdle||!heroScenes[key])return;
   const scene=heroScenes[key];
   const source=heroIdle.querySelector('source');
   if(source)source.src=scene.src;else heroIdle.src=scene.src;
   heroIdle.dataset.scene=key;
   heroIdle.classList.toggle('hero-light',key==='light');
   heroIdle.setAttribute('aria-label',scene.label);
-  if(key==='dark')heroIdle.setAttribute('poster','assets/video/satish-poster.webp?v='+mediaVersion);
-  else heroIdle.removeAttribute('poster');
+  heroIdle.removeAttribute('poster');
   heroIdle.loop=false;
   heroIdle.load();
+}
+function selectHeroScene(){
+  const key=heroSceneOverride==='dark'?'dark':'light';
+  setHeroScene(key);
 }
 function resumeHeroAmbient(restart=false){
   clearTimeout(heroReplayTimer);
