@@ -162,8 +162,8 @@ function animate(t){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),.05);
  const ease=1-Math.pow(.001,dt);
- smooth.x=THREE.MathUtils.lerp(smooth.x,target.x,ease*.42);
- smooth.y=THREE.MathUtils.lerp(smooth.y,target.y,ease*.42);
+ smooth.x=THREE.MathUtils.lerp(smooth.x,target.x,ease*.70);
+ smooth.y=THREE.MathUtils.lerp(smooth.y,target.y,ease*.70);
  const headYaw=smooth.x*.22,headPitch=smooth.y*.12;
  neck.rotation.y=THREE.MathUtils.lerp(neck.rotation.y,headYaw*.42,.12);
  neck.rotation.x=THREE.MathUtils.lerp(neck.rotation.x,-headPitch*.26,.12);
