@@ -136,20 +136,74 @@ function restartWalkIn(event){
 document.querySelectorAll('[data-walkin-restart]').forEach(el=>el.addEventListener('click',restartWalkIn));
 
 const projects={
- reliability:{kicker:'01 / PLATFORM RELIABILITY',title:'When a signal becomes a response.',summary:'An illustrative incident-response workflow: detect a signal, acknowledge impact, coordinate mitigation and confirm recovery.',details:[['CHALLENGE','Production issues need timely context, clear ownership and reliable communication—not just another alert.'],['APPROACH','Bring monitoring, escalation, response checkpoints and stakeholder updates into one traceable workflow.'],['INTERACTION','Trigger the synthetic incident, acknowledge it, mitigate it and verify recovery. No real client systems or customer information are connected.']]},
- automation:{kicker:'02 / AUTOMATION',title:'From noisy data to clear action.',summary:'Representative API-driven reporting workflows built around validation, checkpoints and useful alerts.',details:[['PROBLEM','Manual reporting introduces delay and inconsistency.'],['METHOD','Collect authorized data, validate completeness, preserve checkpoints, transform it into concise summaries and deliver actionable alerts.'],['OUTCOME','A repeatable operating rhythm that reduces manual effort and makes information easier to use.']]},
- leadership:{kicker:'03 / CROSS-FUNCTIONAL DELIVERY',title:'One team. One clear plan.',summary:'A practical model for alignment during incidents, technical changes and high-visibility operating events.',details:[['OWNERSHIP','Clarify who investigates, who approves changes and who communicates.'],['WORKFLOW','Connect technical context with risk, handovers, decisions and follow-up actions.'],['OUTCOME','Teams move together without losing accountability or hiding trade-offs.']]}
+ reliability:{
+   kicker:'01 / PLATFORM RELIABILITY',
+   title:'When a signal becomes a response.',
+   summary:'An illustrative incident-response workflow: detect a signal, acknowledge impact, coordinate mitigation and confirm recovery.',
+   metrics:[['99.8%','uptime SLA supported'],['40%','faster MTTA'],['30%','faster ticket resolution']],
+   systems:['Monitoring','Incident response','Stakeholder updates','SLA visibility'],
+   details:[['CHALLENGE','Production issues need timely context, clear ownership and reliable communication—not just another alert.'],['APPROACH','Bring monitoring, escalation, response checkpoints and stakeholder updates into one traceable workflow.'],['INTERACTION','Trigger the synthetic incident, acknowledge it, mitigate it and verify recovery. No real client systems or customer information are connected.']]
+ },
+ automation:{
+   kicker:'02 / AUTOMATION',
+   title:'From noisy data to clear action.',
+   summary:'Representative API-driven reporting workflows built around validation, checkpoints and useful alerts.',
+   metrics:[['10+ hrs','manual work saved weekly'],['60%','fewer data-entry errors'],['15%','operational cost reduction']],
+   systems:['REST APIs','Google Apps Script','Webhooks','AI-assisted workflows'],
+   details:[['PROBLEM','Manual reporting introduces delay, repetition and inconsistency.'],['METHOD','Collect authorized data, validate completeness, preserve checkpoints, transform it into concise summaries and deliver actionable alerts.'],['OUTCOME','A repeatable operating rhythm that reduces manual effort and makes information easier to use.']]
+ },
+ leadership:{
+   kicker:'03 / CROSS-FUNCTIONAL DELIVERY',
+   title:'One team. One clear plan.',
+   summary:'A practical model for alignment during incidents, technical changes and high-visibility operating events.',
+   metrics:[['8+','cross-functional members led'],['40%','better stakeholder visibility'],['QBR','C-level facilitation']],
+   systems:['Ownership','Escalation','Decision logs','Follow-up actions'],
+   details:[['OWNERSHIP','Clarify who investigates, who approves changes and who communicates.'],['WORKFLOW','Connect technical context with risk, handovers, decisions and follow-up actions.'],['OUTCOME','Teams move together without losing accountability or hiding trade-offs.']]
+ },
+ resume:{
+   kicker:'05 / RÉSUMÉ HIGHLIGHTS',
+   title:'Impact that is easy to scan.',
+   summary:'The résumé is intentionally concise, ATS-friendly and grounded in measurable technical-operations and customer-success outcomes.',
+   metrics:[['7+ years','professional experience'],['99.8%','uptime SLA supported'],['95%','CSAT achieved']],
+   systems:['Technical operations','Customer success','Automation','Incident response'],
+   details:[['POSITIONING','Technical operations and customer success leadership with practical automation and incident-response experience.'],['PROOF','Metrics are attached to concrete work: reporting automation, faster acknowledgement, lower manual error rates and stronger support outcomes.'],['FORMAT','Two-page structure, standard typography, simple section hierarchy and no decorative elements that interfere with ATS parsing.']]
+ }
 };
 const modal=$('projectModal'),modalContent=$('modalContent');let modalFocus=null;
 function labMarkup(){return '<div class="lab-box"><div class="lab-head"><span id="labStatus" role="status">● OPERATIONAL</span><span>FICTIONAL DATA · LIVE DEMO</span></div><div class="lab-metrics"><div>API LATENCY<b id="labLatency">84 ms</b></div><div>ERROR RATE<b id="labErrors">0.1%</b></div><div>RESPONSE<b id="labPhase">Normal</b></div></div><p id="labDetails">Monitoring is active. Trigger the simulated incident to begin.</p><div class="lab-actions"><button id="triggerLab">1. Trigger incident</button><button id="ackLab" class="secondary" disabled>2. Acknowledge</button><button id="mitigateLab" class="secondary" disabled>3. Mitigate</button><button id="resolveLab" class="secondary" disabled>4. Verify recovery</button><button id="resetLab" class="secondary">↻ Reset</button></div></div>'}
+function impactMarkup(metrics=[]){return '<div class="project-impact-panel">'+metrics.map(m=>'<div><b>'+m[0]+'</b><span>'+m[1]+'</span></div>').join('')+'</div>'}
+function systemsMarkup(systems=[]){return '<div class="modal-systems">'+systems.map(s=>'<span>'+s+'</span>').join('')+'</div>'}
 function showProject(id){
  const p=projects[id];if(!p)return;modalFocus=document.activeElement;
- modalContent.innerHTML='<span class="eyebrow">'+p.kicker+'</span><h2 id="modalTitle">'+p.title+'</h2><p>'+p.summary+'</p>'+p.details.map(d=>'<div class="modal-detail"><strong>'+d[0]+'</strong><p>'+d[1]+'</p></div>').join('')+(id==='reliability'?labMarkup():'<div class="case-steps"><div><b>01 / Discover</b><br>Define the goal and constraints.</div><div><b>02 / Design</b><br>Make workflow and ownership clear.</div><div><b>03 / Learn</b><br>Measure what happened and improve the next iteration.</div></div>');
+ modalContent.innerHTML='<span class="eyebrow">'+p.kicker+'</span><h2 id="modalTitle">'+p.title+'</h2><p>'+p.summary+'</p>'+impactMarkup(p.metrics)+systemsMarkup(p.systems)+p.details.map(d=>'<div class="modal-detail"><strong>'+d[0]+'</strong><p>'+d[1]+'</p></div>').join('')+(id==='reliability'?labMarkup():'<div class="case-steps"><div><b>01 / Understand</b><br>Start from the actual operational problem and constraints.</div><div><b>02 / Build</b><br>Create the smallest reliable system that improves the workflow.</div><div><b>03 / Measure</b><br>Use outcomes and feedback to improve the next iteration.</div></div>');
  modal.hidden=false;document.body.classList.add('modal-open');$('closeModal').focus();if(id==='reliability')setupLab();
 }
 function closeProject(){if(modal.hidden)return;modal.hidden=true;document.body.classList.remove('modal-open');modalFocus?.focus?.({preventScroll:true})}
-document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>showProject(b.dataset.open)));
+document.querySelectorAll('[data-open]').forEach(b=>{
+  b.addEventListener('click',()=>showProject(b.dataset.open));
+  if(b.getAttribute('role')==='button'){
+    b.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();showProject(b.dataset.open)}
+    });
+  }
+});
 $('closeModal')?.addEventListener('click',closeProject);modal?.addEventListener('click',e=>{if(e.target===modal)closeProject()});
+
+const toolkitData={
+ automation:{label:'ACTIVE TOOLKIT / AUTOMATION',title:'Build once. Remove repeat work.',description:'Connect APIs, scripts and webhooks into reliable workflows with validation, checkpoints and useful alerts.',flow:['INPUT','VALIDATE','AUTOMATE','REPORT']},
+ visibility:{label:'ACTIVE TOOLKIT / DATA & VISIBILITY',title:'Turn operational data into a decision.',description:'Use dashboards and automated reporting to make SLA health, trends and follow-up actions easier for both technical and business stakeholders to understand.',flow:['COLLECT','CHECK','VISUALIZE','DECIDE']},
+ operations:{label:'ACTIVE TOOLKIT / OPERATIONS & LEADERSHIP',title:'Make ownership obvious when pressure is high.',description:'Combine incident response, clear escalation, stakeholder communication and process improvement so teams know what happens next.',flow:['DETECT','OWN','COORDINATE','LEARN']}
+};
+document.querySelectorAll('[data-toolkit]').forEach(button=>button.addEventListener('click',()=>{
+  const data=toolkitData[button.dataset.toolkit];if(!data)return;
+  document.querySelectorAll('[data-toolkit]').forEach(x=>x.classList.toggle('active',x===button));
+  const consoleEl=$('toolkitConsole');
+  consoleEl?.querySelector('.eyebrow')?.replaceChildren(document.createTextNode(data.label));
+  if($('toolkitTitle'))$('toolkitTitle').textContent=data.title;
+  if($('toolkitDescription'))$('toolkitDescription').textContent=data.description;
+  if($('toolkitFlow'))$('toolkitFlow').innerHTML=data.flow.map((x,i)=>'<span>'+x+'</span>'+(i<data.flow.length-1?'<i>→</i>':'')).join('');
+}));
+
 function setupLab(){
  let phase=0;const states=[['● OPERATIONAL','84 ms','0.1%','Normal','Monitoring is active. Trigger a synthetic incident to begin.'],['● INCIDENT DETECTED','2,420 ms','11.8%','Investigating','High error rate detected. Record impact and acknowledge ownership.'],['● ACKNOWLEDGED','1,860 ms','8.2%','Coordinating','Notify stakeholders and prepare mitigation.'],['● MITIGATED','145 ms','0.5%','Validating','Mitigation applied. Check recovery and stability.'],['● RECOVERED','87 ms','0.1%','Closed','Recovery verified. Capture follow-ups and share a concise summary.']];
  const buttons=[$('triggerLab'),$('ackLab'),$('mitigateLab'),$('resolveLab')];
