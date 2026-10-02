@@ -47,3 +47,12 @@ jobs:
             --db /tmp/job-agent-ci.db \
             --audit /tmp/job-agent-ci.csv
           test -s /tmp/job-agent-ci.csv
+
+      - name: Public ATS read-only discovery smoke test
+        run: |
+          python job-ai-agent/src/cli.py \
+            --sources job-ai-agent/config/sources.qa.json \
+            --db /tmp/job-agent-public.db \
+            --audit /tmp/job-agent-public.csv
+          test -s /tmp/job-agent-public.csv
+          echo "Read-only discovery rows: $(($(wc -l < /tmp/job-agent-public.csv) - 1))"
