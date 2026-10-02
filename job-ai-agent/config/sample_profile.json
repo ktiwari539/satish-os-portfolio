@@ -1,0 +1,38 @@
+{
+  "target_roles": [
+    "customer success manager",
+    "customer success lead",
+    "technical account manager",
+    "support manager",
+    "technical support manager",
+    "support lead",
+    "service delivery manager",
+    "incident manager"
+  ],
+  "skills": [
+    "customer success",
+    "sla",
+    "incident management",
+    "stakeholder management",
+    "team leadership",
+    "rest api",
+    "firebase",
+    "mixpanel",
+    "jira",
+    "salesforce",
+    "automation"
+  ],
+  "preferred_locations": [
+    "india",
+    "mumbai",
+    "pune",
+    "bangalore",
+    "hyderabad",
+    "delhi ncr",
+    "remote"
+  ],
+  "remote_allowed": true,
+  "total_experience_years": 8,
+  "india_authorized": true,
+  "outside_india_sponsorship_required": true
+}

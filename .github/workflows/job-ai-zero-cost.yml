@@ -26,10 +26,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify no paid OpenAI dependency
+      - name: Verify zero-cost and secret-safe source
+        shell: bash
         run: |
-          if grep -RniE "openai|OPENAI_API_KEY" job-ai-agent --exclude="README.md"; then
-            echo "Paid OpenAI dependency/reference detected."
+          set -euo pipefail
+          if grep -RniE "OPENAI_API_KEY|ANTHROPIC_API_KEY|GOOGLE_API_KEY|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|sk-[A-Za-z0-9_-]{20,}" job-ai-agent --exclude="README.md"; then
+            echo "Paid API or secret reference detected."
             exit 1
           fi
 
@@ -38,3 +40,10 @@ jobs:
 
       - name: Unit tests
         run: python -m unittest discover -s job-ai-agent/tests -v
+
+      - name: Offline dry-run smoke test
+        run: |
+          python job-ai-agent/src/cli.py --demo \
+            --db /tmp/job-agent-ci.db \
+            --audit /tmp/job-agent-ci.csv
+          test -s /tmp/job-agent-ci.csv
