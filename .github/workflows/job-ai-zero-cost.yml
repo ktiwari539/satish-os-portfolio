@@ -1,0 +1,40 @@
+name: Job AI Agent Zero-Cost CI
+
+on:
+  push:
+    branches:
+      - test/job-ai-agent-zero-cost
+  pull_request:
+    paths:
+      - "job-ai-agent/**"
+      - ".github/workflows/job-ai-zero-cost.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify no paid OpenAI dependency
+        run: |
+          if grep -RniE "openai|OPENAI_API_KEY" job-ai-agent --exclude="README.md"; then
+            echo "Paid OpenAI dependency/reference detected."
+            exit 1
+          fi
+
+      - name: Compile
+        run: python -m compileall -q job-ai-agent/src
+
+      - name: Unit tests
+        run: python -m unittest discover -s job-ai-agent/tests -v
